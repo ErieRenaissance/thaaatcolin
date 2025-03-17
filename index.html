@@ -3,10 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thaaat Colin</title>
+    <title>Thaaat Colin - Projects</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: url('background.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: white;
+            text-align: center;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        p {
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin-bottom: 20px;
+        }
+
+        .projects {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            max-width: 1200px;
+        }
+
+        .project-box {
+            width: 300px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            transition: 0.3s;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .project-box:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .project-box h3 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .project-box p {
+            font-size: 1rem;
+        }
+
+        .project-box a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 10px;
+            display: block;
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 0.9rem;
+        }
+    </style>
 </head>
 <body>
-    <h1>Welcome to ThaaatColin.com!</h1>
-    <p>This site showcases my projects.</p>
+    <div class="container">
+        <h1>Thaaat Colin</h1>
+        <p>Explore my latest projects and innovations.</p>
+
+        <div class="projects">
+            <div class="project-box">
+                <h3>Project 1</h3>
+                <p>Short description here.</p>
+                <a href="#">View Project</a>
+            </div>
+
+            <div class="project-box">
+                <h3>Project 2</h3>
+                <p>Short description here.</p>
+                <a href="#">View Project</a>
+            </div>
+
+            <div class="project-box">
+                <h3>Project 3</h3>
+                <p>Short description here.</p>
+                <a href="#">View Project</a>
+            </div>
+
+            <div class="project-box">
+                <h3>Project 4</h3>
+                <p>Short description here.</p>
+                <a href="#">View Project</a>
+            </div>
+
+            <div class="project-box">
+                <h3>Project 5</h3>
+                <p>Short description here.</p>
+                <a href="#">View Project</a>
+            </div>
+
+            <div class="project-box">
+                <h3>Project 6</h3>
+                <p>Short description here.</p>
+                <a href="#">View Project</a>
+            </div>
+        </div>
+
+        <div class="footer">
+            &copy; 2025 Thaaat Colin. All rights reserved.
+        </div>
+    </div>
 </body>
 </html>
