@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gizmos & Gadgets</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            text-align: center;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 50px auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        .gizmo-box {
+            width: 200px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            text-align: center;
+            transition: 0.3s;
+        }
+        .gizmo-box:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        .gizmo-box img {
+            width: 100%;
+            border-radius: 5px;
+        }
+        .gizmo-box a {
+            display: block;
+            margin-top: 10px;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Gizmos & Gadgets</h1>
+    <div class="container">
+        <div class="gizmo-box">
+            <img src="gizmo1_thumbnail.jpg" alt="Gizmo 1">
+            <a href="viewer.html?model=gizmo1.glb">View Gizmo 1</a>
+        </div>
+        <div class="gizmo-box">
+            <img src="gadget2_thumbnail.jpg" alt="Gadget 2">
+            <a href="viewer.html?model=gadget2.glb">View Gadget 2</a>
+        </div>
+        <!-- Add more items as needed -->
+    </div>
+</body>
+</html>
