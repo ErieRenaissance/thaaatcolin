@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STEP File Viewer</title>
+    <title>Gizmos & Gadgets</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -14,35 +14,71 @@
             text-align: center;
         }
         .container {
-            max-width: 900px;
+            max-width: 1200px;
             margin: 50px auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
         }
-        iframe {
-            width: 100%;
-            height: 600px;
-            border: none;
-            background: #fff;
+        .gizmo-box {
+            width: 200px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 10px;
+            text-align: center;
+            transition: 0.3s;
+        }
+        .gizmo-box:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        .gizmo-box img {
+            width: 100%;
+            border-radius: 5px;
+        }
+        .gizmo-box a {
+            display: block;
+            margin-top: 10px;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <h1>3D STEP File Viewer</h1>
+    <h1>Gizmos & Gadgets</h1>
     <div class="container">
-        <iframe id="viewer" src="" allowfullscreen></iframe>
+        <!-- BOOM Drone Destroyer -->
+        <div class="gizmo-box">
+            <img src="gizmo1_thumbnail.jpg" alt="BOOM Drone Destroyer">
+            <a href="viewer.html?model=https://drive.google.com/uc?export=download&id=1mVEwxJ2mNETvBI_xXMGr_QAjPVB9XzNq">
+                View BOOM Drone Destroyer
+            </a>
+        </div>
+
+        <!-- Small Mobile Solar Trailer -->
+        <div class="gizmo-box">
+            <img src="gizmo2_thumbnail.jpg" alt="Small Mobile Solar Trailer">
+            <a href="viewer.html?model=https://drive.google.com/uc?export=download&id=1s3uNWNDQLLFWVY7JPvG1Q281VftTAi1Q">
+                View Small Mobile Solar Trailer
+            </a>
+        </div>
+
+        <!-- Large Mobile Solar Trailer -->
+        <div class="gizmo-box">
+            <img src="gizmo3_thumbnail.jpg" alt="Large Mobile Solar Trailer">
+            <a href="viewer.html?model=https://drive.google.com/uc?export=download&id=1wEVC7Qcp8e5A8M2bT1EzrzrZBI-Q6aj5">
+                View Large Mobile Solar Trailer
+            </a>
+        </div>
+
+        <!-- Brush Annihilator 5000 -->
+        <div class="gizmo-box">
+            <img src="gizmo4_thumbnail.jpg" alt="Brush Annihilator 5000">
+            <a href="viewer.html?model=https://drive.google.com/uc?export=download&id=1f7X4jmAq_zLaJkN9r1ljKoqdwt56blTo">
+                View Brush Annihilator 5000
+            </a>
+        </div>
     </div>
-
-    <script>
-        // Extract model parameter from URL
-        const params = new URLSearchParams(window.location.search);
-        const fileURL = params.get("model");
-
-        if (fileURL) {
-            // Load the STEP file using ShareCAD Viewer
-            document.getElementById("viewer").setAttribute("src", `https://sharecad.org/?file=${encodeURIComponent(fileURL)}`);
-        } else {
-            document.body.innerHTML = "<h2>Model not found!</h2>";
-        }
-    </script>
 </body>
 </html>
