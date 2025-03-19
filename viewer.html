@@ -35,10 +35,11 @@
     <script>
         // Extract model parameter from URL
         const params = new URLSearchParams(window.location.search);
-        const modelFile = params.get("model");
+        const fileID = params.get("model");
 
-        if (modelFile) {
-            document.getElementById("viewer").setAttribute("src", `https://sharecad.org/?file=${encodeURIComponent(modelFile)}`);
+        if (fileID) {
+            // Load the file in Google Drive's Web Viewer
+            document.getElementById("viewer").setAttribute("src", `https://drive.google.com/file/d/${fileID}/preview`);
         } else {
             document.body.innerHTML = "<h2>Model not found!</h2>";
         }
