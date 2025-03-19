@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D STEP File Viewer</title>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/Spiritdude/OpenJSCAD.jscad/packages/jsc3d/js/jsc3d.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/Spiritdude/OpenJSCAD.jscad/packages/jsc3d/js/jsc3d.webgl.js"></script>
+    <title>STEP File Viewer</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -19,10 +17,11 @@
             max-width: 900px;
             margin: 50px auto;
         }
-        canvas {
+        iframe {
             width: 100%;
             height: 600px;
-            background: #111;
+            border: none;
+            background: #fff;
             border-radius: 10px;
         }
     </style>
@@ -30,26 +29,17 @@
 <body>
     <h1>3D STEP File Viewer</h1>
     <div class="container">
-        <canvas id="viewer"></canvas>
+        <iframe id="viewer" src="" allowfullscreen></iframe>
     </div>
 
     <script>
-        // Extract model file URL from query parameters
+        // Extract model parameter from URL
         const params = new URLSearchParams(window.location.search);
-        const modelFile = params.get("model");
+        const fileURL = params.get("model");
 
-        if (modelFile) {
-            // Initialize JSC3D Viewer
-            let viewer = new JSC3D.Viewer(document.getElementById('viewer'));
-            viewer.setParameter('SceneUrl', modelFile);
-            viewer.setParameter('InitRotationX', 20);
-            viewer.setParameter('InitRotationY', 40);
-            viewer.setParameter('InitRotationZ', 0);
-            viewer.setParameter('RenderMode', 'flat');
-            viewer.setParameter('BackgroundColor1', '#111');
-            viewer.setParameter('BackgroundColor2', '#333');
-            viewer.init();
-            viewer.update();
+        if (fileURL) {
+            // Load the STEP file using ShareCAD Viewer
+            document.getElementById("viewer").setAttribute("src", `https://sharecad.org/?file=${encodeURIComponent(fileURL)}`);
         } else {
             document.body.innerHTML = "<h2>Model not found!</h2>";
         }
