@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PDF Viewer</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        iframe {
+            width: 100%;
+            height: 100vh;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <iframe id="pdfFrame" src=""></iframe>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const fileURL = params.get("file");
+
+        if (fileURL) {
+            document.getElementById("pdfFrame").src = fileURL;
+        } else {
+            document.body.innerHTML = "<h2>PDF not found!</h2>";
+        }
+    </script>
+</body>
+</html>
