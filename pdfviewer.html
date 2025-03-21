@@ -28,20 +28,20 @@
 </head>
 <body>
     <button onclick="history.back()" style="
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    padding: 10px 20px;
-    background-color: rgba(255, 255, 255, 0.2);
-    border: 1px solid white;
-    border-radius: 5px;
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
-    z-index: 1000;
-">
-    ⬅ Back
-</button>
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        padding: 10px 20px;
+        background-color: rgba(255, 255, 255, 0.2);
+        border: 1px solid white;
+        border-radius: 5px;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 1000;
+    ">
+        ⬅ Back
+    </button>
 
     <h1>Research Paper Viewer</h1>
     <iframe id="pdfFrame" src=""></iframe>
@@ -51,9 +51,25 @@
         const fileURL = params.get("file");
 
         if (fileURL) {
-            document.getElementById("pdfFrame").src = fileURL;
+            const viewerURL = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(fileURL)}`;
+            document.getElementById("pdfFrame").src = viewerURL;
         } else {
-            document.body.innerHTML = "<h2>PDF not found!</h2>";
+            document.body.innerHTML = `
+                <button onclick="history.back()" style="
+                    position: fixed;
+                    top: 20px;
+                    left: 20px;
+                    padding: 10px 20px;
+                    background-color: rgba(255, 255, 255, 0.2);
+                    border: 1px solid white;
+                    border-radius: 5px;
+                    color: white;
+                    font-weight: bold;
+                    cursor: pointer;
+                    z-index: 1000;
+                ">⬅ Back</button>
+                <h2 style="margin-top: 100px;">PDF not found!</h2>
+            `;
         }
     </script>
 </body>
