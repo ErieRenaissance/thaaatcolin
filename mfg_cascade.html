@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manufacturing Cascading Effects - Interactive Diagram</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+        }
+
+```
+    #container {
+        background-color: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    h1 {
+        text-align: center;
+        color: #2c3e50;
+        margin-bottom: 10px;
+    }
+    
+    .subtitle {
+        text-align: center;
+        color: #7f8c8d;
+        margin-bottom: 20px;
+        font-size: 14px;
+    }
+    
+    #diagramContainer {
+        position: relative;
+        width: 100%;
+        height: 2000px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        overflow: auto;
+        background-color: #fafafa;
+    }
+    
+    #diagram {
+        width: 100%;
+        height: 100%;
+    }
+    
+    .node {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .node circle {
+        stroke-width: 2px;
+        transition: all 0.3s ease;
+    }
+    
+    .node:hover circle {
+        stroke-width: 4px;
+        filter: brightness(1.2);
+    }
+    
+    .node text {
+        font-size: 10px;
+        pointer-events: none;
+        user-select: none;
+    }
+    
+    .link {
+        fill: none;
+        stroke-opacity: 0.3;
+        stroke-width: 1.5px;
+        transition: all 0.3s ease;
+    }
+    
+    .link.highlighted {
+        stroke-opacity: 0.8;
+        stroke-width: 3px;
+    }
+    
+    .legend {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+    }
+    
+    .legend-item {
+        display: inline-block;
+        margin-right: 20px;
+        margin-bottom: 10px;
+    }
+    
+    .legend-color {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        vertical-align: middle;
+        margin-right: 5px;
+        border: 2px solid #333;
+    }
+    
+    .controls {
+        margin-bottom: 15px;
+        text-align: center;
+    }
+    
+    button {
+        padding: 8px 16px;
+        margin: 0 5px;
+        border: none;
+        border-radius: 4px;
+        background-color: #3498db;
+        color: white;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    
+    button:hover {
+        background-color: #2980b9;
+    }
+    
+    .tooltip {
+        position: absolute;
+        padding: 10px;
+        background-color: rgba(0, 0, 0, 0.9);
+        color: white;
+        border-radius: 4px;
+        font-size: 12px;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s;
+        max-width: 300px;
+        z-index: 1000;
+    }
+</style>
+```
+
+</head>
+<body>
+    <div id="container">
+        <h1>Cascading Effects of Local Manufacturing Investment</h1>
+        <div class="subtitle">Interactive Flow Diagram Showing Multi-Degree Impacts (Scroll to explore)</div>
+
+```
+    <div class="controls">
+        <button onclick="toggleLabels()">Toggle Labels</button>
+        <button onclick="highlightCriticalPaths()">Highlight Critical Paths</button>
+        <button onclick="resetHighlight()">Reset Highlight</button>
+    </div>
+    
+    <div id="diagramContainer">
+        <svg id="diagram"></svg>
+    </div>
+    
+    <div class="legend">
+        <div class="legend-item">
+            <span class="legend-color" style="background-color: #c0392b;"></span>
+            <span>Root (Manufacturing Investment)</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-color" style="background-color: #e74c3c;"></span>
+            <span>Primary Effect (Degree 1-2)</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-color" style="background-color: #f39c12;"></span>
+            <span>Secondary Effect (Degree 3-4)</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-color" style="background-color: #3498db;"></span>
+            <span>Tertiary Effect (Degree 5-6)</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-color" style="background-color: #9b59b6;"></span>
+            <span>Advanced Effect (Degree 7)</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-color" style="background-color: #1abc9c;"></span>
+            <span>8th Degree Effect</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-color" style="background-color: #16a085;"></span>
+            <span>9th Degree Effect</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-color" style="background-color: #34495e;"></span>
+            <span>Emergent Property</span>
+        </div>
+    </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+    // Data structure with hierarchical layout
+    const treeData = {
+        id: "root",
+        label: "Manufacturing\nInvestment",
+        degree: 0,
+        category: "root",
+        children: [
+            {
+                id: "tax_revenue",
+                label: "Stable Tax Revenue",
+                degree: 1,
+                category: "primary",
+                children: [
+                    {
+                        id: "infrastructure",
+                        label: "Infrastructure\nInvestment",
+                        degree: 2,
+                        category: "secondary",
+                        children: [
+                            {
+                                id: "tech_sector",
+                                label: "Technology\nSector",
+                                degree: 4,
+                                category: "advanced",
+                                children: [
+                                    {
+                                        id: "remote_workers",
+                                        label: "Remote Worker\nAttraction",
+                                        degree: 5,
+                                        category: "advanced",
+                                        children: [
+                                            {
+                                                id: "social_capital",
+                                                label: "Social Capital",
+                                                degree: 6,
+                                                category: "very_advanced",
+                                                children: [
+                                                    {
+                                                        id: "civic_expertise",
+                                                        label: "Civic Expertise",
+                                                        degree: 7,
+                                                        category: "eighth",
+                                                        children: [
+                                                            {
+                                                                id: "democratic_quality",
+                                                                label: "Democratic Quality",
+                                                                degree: 8,
+                                                                category: "ninth",
+                                                                children: [
+                                                                    {
+                                                                        id: "long_term_planning",
+                                                                        label: "Long-term Planning",
+                                                                        degree: 8,
+                                                                        category: "ninth"
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                id: "talent_attraction",
+                                label: "Talent Attraction",
+                                degree: 3,
+                                category: "tertiary",
+                                children: [
+                                    {
+                                        id: "cultural_amenities",
+                                        label: "Cultural Amenities",
+                                        degree: 4,
+                                        category: "advanced",
+                                        children: [
+                                            {
+                                                id: "service_economy",
+                                                label: "Service Economy",
+                                                degree: 5,
+                                                category: "advanced",
+                                                children: [
+                                                    {
+                                                        id: "economic_diversity",
+                                                        label: "Economic\nDiversification",
+                                                        degree: 6,
+                                                        category: "very_advanced",
+                                                        children: [
+                                                            {
+                                                                id: "recession_resilience",
+                                                                label: "Recession\nResilience",
+                                                                degree: 7,
+                                                                category: "eighth",
+                                                                children: [
+                                                                    {
+                                                                        id: "urban_blight_prevent",
+                                                                        label: "Urban Blight\nPrevention",
+                                                                        degree: 8,
+                                                                        category: "ninth"
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        id: "education",
+                        label: "Education Funding",
+                        degree: 2,
+                        category: "secondary",
+                        children: [
+                            {
+                                id: "workforce_quality",
+                                label: "Workforce Quality",
+                                degree: 3,
+                                category: "tertiary",
+                                children: [
+                                    {
+                                        id: "brain_drain_prevent",
+                                        label: "Brain Drain\nPrevention",
+                                        degree: 4,
+                                        category: "advanced",
+                                        children: [
+                                            {
+                                                id: "family_networks",
+                                                label: "Family Networks",
+                                                degree: 5,
+                                                category: "advanced",
+                                                children: [
+                                                    {
+                                                        id: "childcare_access",
+                                                        label: "Childcare Support",
+                                                        degree: 6,
+                                                        category: "very_advanced",
+                                                        children: [
+                                                            {
+                                                                id: "female_workforce",
+                                                                label: "Female Workforce\nParticipation",
+                                                                degree: 7,
+                                                                category: "eighth",
+                                                                children: [
+                                                                    {
+                                                                        id: "education_cycle",
+                                                                        label: "Educational\nAttainment Cycle",
+                                                                        degree: 8,
+                                                                        category: "ninth"
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        id: "innovation_clusters",
+                                        label: "Innovation Clusters",
+                                        degree: 6,
+                                        category: "very_advanced",
+                                        children: [
+                                            {
+                                                id: "knowledge_hub",
+                                                label: "Knowledge Hub",
+                                                degree: 7,
+                                                category: "eighth",
+                                                children: [
+                                                    {
+                                                        id: "institutional_advantage",
+                                                        label: "Institutional\nAdvantage",
+                                                        degree: 8,
+                                                        category: "ninth"
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        id: "amenities",
+                        label: "Community\nAmenities",
+                        degree: 2,
+                        category: "secondary",
+                        children: [
+                            {
+                                id: "quality_of_life",
+                                label: "Quality of Life",
+                                degree: 3,
+                                category: "tertiary",
+                                children: [
+                                    {
+                                        id: "population_growth",
+                                        label: "Population Growth",
+                                        degree: 4,
+                                        category: "advanced",
+                                        children: [
+                                            {
+                                                id: "healthcare_infra",
+                                                label: "Healthcare\nInfrastructure",
+                                                degree: 4,
+                                                category: "advanced",
+                                                children: [
+                                                    {
+                                                        id: "medical_research",
+                                                        label: "Medical Research",
+                                                        degree: 7,
+                                                        category: "eighth",
+                                                        children: [
+                                                            {
+                                                                id: "biotech_ecosystem",
+                                                                label: "Biotech\nEcosystem",
+                                                                degree: 8,
+                                                                category: "ninth"
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                id: "regional_brand",
+                                label: "Regional Brand",
+                                degree: 6,
+                                category: "very_advanced",
+                                children: [
+                                    {
+                                        id: "business_expansion",
+                                        label: "Business Expansion",
+                                        degree: 5,
+                                        category: "advanced"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: "long_term_jobs",
+                label: "Stable Employment",
+                degree: 1,
+                category: "primary",
+                children: [
+                    {
+                        id: "income_stability",
+                        label: "Income Stability",
+                        degree: 2,
+                        category: "secondary",
+                        children: [
+                            {
+                                id: "housing_stability",
+                                label: "Housing Market\nStability",
+                                degree: 3,
+                                category: "tertiary",
+                                children: [
+                                    {
+                                        id: "home_equity",
+                                        label: "Home Equity\nBuilding",
+                                        degree: 4,
+                                        category: "advanced",
+                                        children: [
+                                            {
+                                                id: "entrepreneurship",
+                                                label: "Entrepreneurial\nEcosystem",
+                                                degree: 5,
+                                                category: "advanced",
+                                                children: [
+                                                    {
+                                                        id: "venture_capital",
+                                                        label: "Venture Capital",
+                                                        degree: 6,
+                                                        category: "very_advanced",
+                                                        children: [
+                                                            {
+                                                                id: "local_investors",
+                                                                label: "Local Angel\nInvestors",
+                                                                degree: 7,
+                                                                category: "eighth",
+                                                                children: [
+                                                                    {
+                                                                        id: "social_services",
+                                                                        label: "Social Service\nInfrastructure",
+                                                                        degree: 8,
+                                                                        category: "ninth"
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                id: "health_outcomes",
+                                label: "Health Outcomes",
+                                degree: 3,
+                                category: "tertiary",
+                                children: [
+                                    {
+                                        id: "local_capital",
+                                        label: "Local Capital\nFormation",
+                                        degree: 7,
+                                        category: "eighth",
+                                        children: [
+                                            {
+                                                id: "economic_sovereignty",
+                                                label: "Economic\nSovereignty",
+                                                degree: 8,
+                                                category: "ninth"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: "supply_chain",
+                label: "Supply Chain\nDevelopment",
+                degree: 1,
+                category: "primary",
+                children: [
+                    {
+                        id: "supplier_network",
+                        label: "Supplier Ecosystem",
+                        degree: 2,
+                        category: "secondary",
+                        children: [
+                            {
+                                id: "logistics_hub",
+                                label: "Logistics Hub",
+                                degree: 3,
+                                category: "tertiary",
+                                children: [
+                                    {
+                                        id: "distribution_center",
+                                        label: "Distribution\nCenters",
+                                        degree: 7,
+                                        category: "eighth",
+                                        children: [
+                                            {
+                                                id: "network_effects",
+                                                label: "Network Effect\nDominance",
+                                                degree: 8,
+                                                category: "ninth"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    };
+
+    // Emergent properties (shown at bottom)
+    const emergentNodes = [
+        {id: "resilience_mult", label: "Resilience Multiplication", degree: 9, category: "emergent"},
+        {id: "talent_magnetism", label: "Talent Magnetism", degree: 9, category: "emergent"},
+        {id: "innovation_pipeline", label: "Complete Innovation Pipeline", degree: 9, category: "emergent"},
+        {id: "intergenerational", label: "Intergenerational Equity", degree: 9, category: "emergent"},
+        {id: "democratic_vitality", label: "Democratic Vitality", degree: 9, category: "emergent"}
+    ];
+
+    // Color mapping
+    const colors = {
+        root: "#c0392b",
+        primary: "#e74c3c",
+        secondary: "#f39c12",
+        tertiary: "#3498db",
+        advanced: "#9b59b6",
+        very_advanced: "#8e44ad",
+        eighth: "#1abc9c",
+        ninth: "#16a085",
+        emergent: "#34495e"
+    };
+
+    // Layout configuration
+    const levelWidth = 200;
+    const nodeSpacing = 80;
+    const svgWidth = 2400;
+    const svgHeight = 1900;
+
+    const svg = document.getElementById('diagram');
+    svg.setAttribute('width', svgWidth);
+    svg.setAttribute('height', svgHeight);
+
+    // Create SVG namespace
+    const svgNS = "http://www.w3.org/2000/svg";
+
+    // Storage for all nodes and links
+    let allNodes = [];
+    let allLinks = [];
+
+    // Traverse tree and assign positions
+    function layoutTree(node, x, y, level, parentY) {
+        const nodeData = {
+            ...node,
+            x: x,
+            y: y,
+            level: level
+        };
+        allNodes.push(nodeData);
+
+        if (node.children && node.children.length > 0) {
+            const totalHeight = (node.children.length - 1) * nodeSpacing;
+            let childY = y - totalHeight / 2;
+
+            node.children.forEach((child, i) => {
+                const childX = x + levelWidth;
+                const currentChildY = childY + i * nodeSpacing;
+                
+                allLinks.push({
+                    x1: x,
+                    y1: y,
+                    x2: childX,
+                    y2: currentChildY,
+                    sourceCategory: node.category
+                });
+
+                layoutTree(child, childX, currentChildY, level + 1, y);
+            });
+        }
+
+        return nodeData;
+    }
+
+    // Layout the tree
+    layoutTree(treeData, 100, svgHeight / 2, 0, null);
+
+    // Add emergent nodes at the bottom
+    const emergentY = svgHeight - 200;
+    const emergentStartX = 200;
+    const emergentSpacing = 400;
+
+    emergentNodes.forEach((node, i) => {
+        const x = emergentStartX + i * emergentSpacing;
+        allNodes.push({
+            ...node,
+            x: x,
+            y: emergentY,
+            level: 10
+        });
+
+        // Connect emergent nodes to relevant 9th degree nodes
+        const ninthDegreeNodes = allNodes.filter(n => n.degree === 8 && n.category === "ninth");
+        if (ninthDegreeNodes.length > 0) {
+            // Connect to a few relevant nodes
+            const targetNode = ninthDegreeNodes[Math.floor(i * ninthDegreeNodes.length / emergentNodes.length)];
+            allLinks.push({
+                x1: targetNode.x,
+                y1: targetNode.y,
+                x2: x,
+                y2: emergentY,
+                sourceCategory: "ninth"
+            });
+        }
+    });
+
+    // Draw links
+    const linksGroup = document.createElementNS(svgNS, 'g');
+    linksGroup.setAttribute('id', 'links');
+    svg.appendChild(linksGroup);
+
+    allLinks.forEach((link, i) => {
+        const path = document.createElementNS(svgNS, 'path');
+        const midX = (link.x1 + link.x2) / 2;
+        const d = `M ${link.x1} ${link.y1} C ${midX} ${link.y1}, ${midX} ${link.y2}, ${link.x2} ${link.y2}`;
+        
+        path.setAttribute('d', d);
+        path.setAttribute('class', 'link');
+        path.setAttribute('stroke', colors[link.sourceCategory] || '#999');
+        path.setAttribute('data-index', i);
+        
+        linksGroup.appendChild(path);
+    });
+
+    // Draw nodes
+    const nodesGroup = document.createElementNS(svgNS, 'g');
+    nodesGroup.setAttribute('id', 'nodes');
+    svg.appendChild(nodesGroup);
+
+    const tooltip = document.getElementById('tooltip');
+
+    allNodes.forEach((node, i) => {
+        const g = document.createElementNS(svgNS, 'g');
+        g.setAttribute('class', 'node');
+        g.setAttribute('transform', `translate(${node.x}, ${node.y})`);
+        g.setAttribute('data-id', node.id);
+
+        const circle = document.createElementNS(svgNS, 'circle');
+        const radius = node.degree === 0 ? 25 : node.degree === 9 ? 18 : 12;
+        circle.setAttribute('r', radius);
+        circle.setAttribute('fill', colors[node.category]);
+        circle.setAttribute('stroke', darkenColor(colors[node.category]));
+        
+        g.appendChild(circle);
+
+        const text = document.createElementNS(svgNS, 'text');
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('dy', '0.35em');
+        text.setAttribute('fill', '#000');
+        text.style.fontSize = node.degree === 0 ? '11px' : node.degree === 9 ? '9px' : '8px';
+        text.style.fontWeight = node.degree === 0 || node.degree === 9 ? 'bold' : 'normal';
+
+        const lines = node.label.split('\n');
+        if (lines.length === 1) {
+            text.textContent = node.label;
+        } else {
+            lines.forEach((line, lineIndex) => {
+                const tspan = document.createElementNS(svgNS, 'tspan');
+                tspan.setAttribute('x', '0');
+                tspan.setAttribute('dy', lineIndex === 0 ? '-0.3em' : '1.1em');
+                tspan.textContent = line;
+                text.appendChild(tspan);
+            });
+        }
+
+        g.appendChild(text);
+
+        // Tooltip events
+        g.addEventListener('mouseenter', (e) => {
+            tooltip.style.opacity = '1';
+            tooltip.innerHTML = `<strong>${node.label.replace(/\n/g, ' ')}</strong><br/>Degree: ${node.degree + 1}<br/>Category: ${node.category}`;
+            tooltip.style.left = (e.pageX + 10) + 'px';
+            tooltip.style.top = (e.pageY - 10) + 'px';
+        });
+
+        g.addEventListener('mouseleave', () => {
+            tooltip.style.opacity = '0';
+        });
+
+        nodesGroup.appendChild(g);
+    });
+
+    // Helper function to darken colors
+    function darkenColor(color) {
+        const rgb = color.match(/[0-9a-f]{2}/gi);
+        if (!rgb) return color;
+        const darker = rgb.map(x => {
+            const val = Math.max(0, parseInt(x, 16) - 30);
+            return val.toString(16).padStart(2, '0');
+        });
+        return '#' + darker.join('');
+    }
+
+    // Control functions
+    let labelsVisible = true;
+    function toggleLabels() {
+        labelsVisible = !labelsVisible;
+        const texts = document.querySelectorAll('.node text');
+        texts.forEach(text => {
+            text.style.opacity = labelsVisible ? '1' : '0';
+        });
+    }
+
+    function highlightCriticalPaths() {
+        const criticalIds = new Set([
+            "root", "tax_revenue", "education", "workforce_quality",
+            "innovation_clusters", "knowledge_hub", "institutional_advantage"
+        ]);
+
+        document.querySelectorAll('.node').forEach(node => {
+            const id = node.getAttribute('data-id');
+            const circle = node.querySelector('circle');
+            if (criticalIds.has(id)) {
+                circle.setAttribute('stroke-width', '4');
+                circle.setAttribute('stroke', '#FFD700');
+            } else {
+                circle.style.opacity = '0.3';
+            }
+        });
+
+        document.querySelectorAll('.link').forEach(link => {
+            link.style.strokeOpacity = '0.1';
+        });
+    }
+
+    function resetHighlight() {
+        document.querySelectorAll('.node circle').forEach(circle => {
+            circle.setAttribute('stroke-width', '2');
+            circle.style.opacity = '1';
+            const parent = circle.parentElement;
+            const id = parent.getAttribute('data-id');
+            const node = allNodes.find(n => n.id === id);
+            if (node) {
+                circle.setAttribute('stroke', darkenColor(colors[node.category]));
+            }
+        });
+
+        document.querySelectorAll('.link').forEach(link => {
+            link.style.strokeOpacity = '0.3';
+        });
+    }
+
+    // Make functions available globally
+    window.toggleLabels = toggleLabels;
+    window.highlightCriticalPaths = highlightCriticalPaths;
+    window.resetHighlight = resetHighlight;
+</script>
+```
+
+</body>
+</html>
