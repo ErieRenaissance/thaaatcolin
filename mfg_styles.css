@@ -46,7 +46,7 @@ body {
 /* Container for the entire page.  On wide screens it is centred with a max
  * width to improve readability; on narrow screens it spans the full width. */
 #container {
-  max-width: 95%;
+  max-width: 80%;
   margin: 0 auto;
   background-color: var(--panel-background);
   border-radius: 8px;
