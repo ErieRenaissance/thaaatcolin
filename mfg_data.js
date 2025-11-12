@@ -357,7 +357,7 @@ window.descriptions = {
   innovation: "Technology companies, research institutions, and entrepreneurial activity create innovation ecosystems where ideas, talent, and capital combine to generate intellectual property, patents, and breakthrough technologies.",
   brand: "Cumulative effects of economic vitality, cultural amenities, and quality of life create distinctive regional identity that attracts investment, talent, and tourism while building civic pride and political influence.",
   
-  // Seventh degree
+  // 7th degree
   civic: "Successful professionals and engaged residents contribute leadership, expertise, and funding to nonprofit boards, government commissions, and civic organizations, improving institutional effectiveness and community outcomes.",
   resilience: "Economic diversification, social capital, and institutional strength create community resilience that enables rapid recovery from economic shocks, natural disasters, and industry disruptions without permanent damage.",
   female: "Accessible childcare and flexible employment enable women to participate fully in the workforce, increasing household incomes, tax revenues, and talent pool depth while modeling economic opportunity for daughters.",
@@ -366,7 +366,7 @@ window.descriptions = {
   medical: "Healthcare facilities and research funding support medical research institutions that generate patents, attract industry partnerships, and create biotech spinoff companies that diversify the economy.",
   capital: "Local investors, credit unions, and community banks keep capital circulating within the region rather than extracting wealth to distant financial centers, funding local business growth and home ownership.",
   
-  // Eighth degree
+  // 8th degree
   democracy: "Civic engagement, institutional knowledge, and educated population create effective democratic governance with informed voters, responsive officials, and evidence-based policies that improve community outcomes.",
   planning: "Civic expertise and democratic participation enable sophisticated long-term urban planning that anticipates infrastructure needs, preserves environmental assets, and makes strategic investments that compound over time.",
   blight: "Economic resilience and housing stability prevent foreclosure cascades during downturns, maintaining neighborhood cohesion and property values that avoid destructive blight cycles requiring expensive intervention.",
