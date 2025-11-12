@@ -1,26 +1,26 @@
 /*
  * Base styles for the manufacturing cascade visualisation.
  *
- * Colours, spacing, typography and responsive behaviour are defined here.
+ * Colors, spacing, typography and responsive behaviour are defined here.
  * When customising the look and feel, adjust variables at the top of the
  * stylesheet rather than duplicating values throughout.
  */
 
-/* Colour variables for easy theming.  Colours map to the same categories
+/* Color variables for easy theming.  Colors map to the same categories
  * defined in `data.js` so that the legend and nodes remain consistent. */
 :root {
-  --colour-root: #c0392b;
-  --colour-primary: #e74c3c;
-  --colour-secondary: #f39c12;
-  --colour-tertiary: #3498db;
-  --colour-advanced: #9b59b6;
-  --colour-very-advanced: #8e44ad;
-  --colour-eighth: #1abc9c;
-  --colour-ninth: #16a085;
-  --colour-emergent: #d5d2d8;
+  --color-root: #c0392b;
+  --color-primary: #e74c3c;
+  --color-secondary: #f39c12;
+  --color-tertiary: #3498db;
+  --color-advanced: #9b59b6;
+  --color-very-advanced: #8e44ad;
+  --color-eighth: #1abc9c;
+  --color-ninth: #16a085;
+  --color-emergent: #d5d2d8;
 
-  --text-colour: #000000;
-  --muted-colour: #7f8c8d;
+  --text-color: #000000;
+  --muted-color: #7f8c8d;
   --background: #f5f5f5;
   --panel-background: #ffffff;
   --panel-border: #dddddd;
@@ -110,7 +110,7 @@ button:active {
 #diagramWrapper {
   position: relative;
   width: 100%;
-  height: 70vh;
+  height: 75vh;
   border: 2px solid var(--panel-border);
   border-radius: 4px;
   overflow: hidden;
@@ -139,10 +139,10 @@ svg {
 
 .legend-dot {
   display: inline-block;
-  width: 12px;
-  height: 12px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  margin-right: 6px;
+  margin-right: 12px;
   border: 2px solid #333;
 }
 
@@ -182,7 +182,7 @@ svg {
     top: 50%;
     right: auto;
     bottom: auto;
-    max-width: 80%;
+    max-width: 90%;
     border-radius: 8px;
     /* Start slightly scaled down and invisible */
     transform: translate(-50%, -50%) scale(0.8);
