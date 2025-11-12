@@ -1,126 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thaaat Colin - Projects</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background: url('https://raw.githubusercontent.com/ErieRenaissance/thaaatcolin/main/Background.jpg') no-repeat center center fixed;
-            background-size: cover;
-            color: white;
-            text-align: center;
-        }
-
-        .container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            background: rgba(0, 0, 0, 0.6);
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-        }
-
-        p {
-            font-size: 1.2rem;
-            max-width: 600px;
-            margin-bottom: 20px;
-        }
-
-        .projects {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 20px;
-            max-width: 1200px;
-        }
-
-        .project-box {
-            width: 300px;
-            height: 200px;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 10px;
-            transition: 0.3s;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .project-box:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .project-box h3 {
-            margin: 0;
-            font-size: 1.5rem;
-        }
-
-        .project-box p {
-            font-size: 1rem;
-        }
-
-        .project-box a {
-            color: white;
-            text-decoration: none;
-            font-weight: bold;
-            margin-top: 10px;
-            display: block;
-        }
-
-        .footer {
-            margin-top: 30px;
-            font-size: 0.9rem;
-            padding: 0;
-            height: 100vh;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Manufacturing Cascading Effects – Interactive Diagram</title>
+  <!-- External stylesheet defines the layout, colours and responsive behaviour -->
+  <link rel="stylesheet" href="mfg_styles.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Thaaat Colin</h1>
-        <p>Explore my latest projects and ideas.</p>
-
-        <div class="projects">
-            <div class="project-box">
-                <h3>Gizmo's & Gadgets</h3>
-                <p>Random designs and tinkerings</p>
-                <a href="gizmos.html">Check it</a>
-            </div>
-
-            <div class="project-box">
-                <h3>The Compounding Impact of Manufacturing</h3>
-                <p>How reindustrialization rebuilds communities</p>
-                <a href="mfg_cascade.html">Explore</a>
-            </div>
-            
-            <div class="project-box">
-                <h3>Writing</h3>
-                <p>Musings and more.</p>
-                <a href="https://ftjov.substack.com/">Read away</a>
-            </div>
-
-            <div class="project-box">
-                <h3>Research</h3>
-                <p>Culmination of going down too many rabbit holes.</p>
-                <a href="research.html">View Research</a>
-            </div>
-
-        </div>
-
-        <div class="footer">
-            &copy; 2025 Thaaat Colin. All rights reserved.
-        </div>
+  <div id="container">
+    <h1>Cascading Effects of Local Manufacturing</h1>
+    <div class="subtitle">Tap or click a node to learn more about its role in the community</div>
+    <div class="controls">
+      <input type="text" id="searchInput" placeholder="Search nodes…" aria-label="Search for a node">
+      <button onclick="toggleLabels()">Toggle Labels</button>
+      <button onclick="resetView()">Reset</button>
     </div>
+    <div id="diagramWrapper">
+      <svg id="diagram" role="img" aria-label="Manufacturing cascade network"></svg>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><span class="legend-dot" style="background: var(--colour-root);"></span><span>Root (0°)</span></div>
+      <div class="legend-item"><span class="legend-dot" style="background: var(--colour-primary);"></span><span>1-2°</span></div>
+      <div class="legend-item"><span class="legend-dot" style="background: var(--colour-secondary);"></span><span>3-4°</span></div>
+      <div class="legend-item"><span class="legend-dot" style="background: var(--colour-tertiary);"></span><span>5-6°</span></div>
+      <div class="legend-item"><span class="legend-dot" style="background: var(--colour-advanced);"></span><span>7°</span></div>
+      <div class="legend-item"><span class="legend-dot" style="background: var(--colour-very-advanced);"></span><span>8°</span></div>
+      <div class="legend-item"><span class="legend-dot" style="background: var(--colour-emergent);"></span><span>9° Emergent</span></div>
+    </div>
+  </div>
+  <!-- Dimmed overlay behind the info panel -->
+  <div class="overlay" id="overlay" onclick="closePanel()"></div>
+  <!-- Information panel appears when a node is selected -->
+  <div class="info-panel" id="infoPanel" role="dialog" aria-modal="true" aria-labelledby="panelTitle">
+    <div class="panel-header">
+      <h2 class="panel-title" id="panelTitle">Node Information</h2>
+      <button class="close-btn" onclick="closePanel()" aria-label="Close information panel">&times;</button>
+    </div>
+    <div id="panelContent"></div>
+  </div>
+  <!-- External libraries and scripts.  D3 is loaded first, followed by data and interaction logic -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="mfg_data.js"></script>
+  <script src="mfg_script.js"></script>
 </body>
 </html>
