@@ -17,10 +17,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ===== TUNE THESE SIZES TO YOUR LIKING =====
   const VISIBLE_R = 34;     // visible circle radius (px)
-  const HIT_PAD   = 12;     // extra padding for hit area (px)
+  const HIT_PAD   = 20;     // extra padding for hit area (px)
   const HIT_R     = VISIBLE_R + HIT_PAD;
   const FONT_PX   = 10;     // label font (px)
-  const LINE_EM   = 1.1;    // line height for tspans (em)
+  const LINE_EM   = 1.0;    // line height for tspans (em)
   const COL_SPACING = 180;  // horizontal spacing between nodes
   const ROW_SPACING = 150;  // vertical spacing between rows
   // ===========================================
