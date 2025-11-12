@@ -1,0 +1,261 @@
+/*
+ * Base styles for the manufacturing cascade visualisation.
+ *
+ * Colours, spacing, typography and responsive behaviour are defined here.
+ * When customising the look and feel, adjust variables at the top of the
+ * stylesheet rather than duplicating values throughout.
+ */
+
+/* Colour variables for easy theming.  Colours map to the same categories
+ * defined in `data.js` so that the legend and nodes remain consistent. */
+:root {
+  --colour-root: #c0392b;
+  --colour-primary: #e74c3c;
+  --colour-secondary: #f39c12;
+  --colour-tertiary: #3498db;
+  --colour-advanced: #9b59b6;
+  --colour-very-advanced: #8e44ad;
+  --colour-eighth: #1abc9c;
+  --colour-ninth: #16a085;
+  --colour-emergent: #d5d2d8;
+
+  --text-colour: #000000;
+  --muted-colour: #7f8c8d;
+  --background: #f5f5f5;
+  --panel-background: #ffffff;
+  --panel-border: #dddddd;
+  --accent: #3498db;
+  --accent-hover: #2f8ac4;
+  --accent-active: #266d9a;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  background-color: var(--background);
+  color: var(--text-colour);
+  line-height: 1.5;
+  padding: 16px;
+}
+
+/* Container for the entire page.  On wide screens it is centred with a max
+ * width to improve readability; on narrow screens it spans the full width. */
+#container {
+  max-width: 1000px;
+  margin: 0 auto;
+  background-color: var(--panel-background);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+h1 {
+  font-size: 1.8rem;
+  text-align: center;
+  margin-bottom: 0.25em;
+  color: var(--colour-root);
+}
+
+.subtitle {
+  text-align: center;
+  color: var(--muted-colour);
+  margin-bottom: 1em;
+}
+
+/* Search bar and control buttons share a container.  Buttons wrap on small
+ * screens; spacing is consistent across devices. */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.controls input[type="text"] {
+  flex: 2 1 200px;
+  padding: 8px 12px;
+  font-size: 1rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+}
+
+button {
+  flex: 1 1 120px;
+  padding: 10px 14px;
+  background-color: var(--accent);
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+button:hover {
+  background-color: var(--accent-hover);
+}
+
+button:active {
+  background-color: var(--accent-active);
+}
+
+/* Wrapper for the diagram.  Uses a fixed height that adjusts based on
+ * viewport height.  Overflow is hidden because zoom and pan will handle
+ * navigation. */
+#diagramWrapper {
+  position: relative;
+  width: 100%;
+  height: 65vh;
+  border: 2px solid var(--panel-border);
+  border-radius: 4px;
+  overflow: hidden;
+  background: #fafafa;
+}
+
+svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Legend uses flexbox to organise items; items wrap on small screens. */
+.legend {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 6px;
+  border: 2px solid #333;
+}
+
+/* Info panel overlays the diagram on small screens and appears as a centred
+ * modal on larger screens.  Hidden by default; shown by toggling the
+ * .visible class.  The transform property is used to slide the panel in
+ * on small screens and to centre and scale it on larger displays. */
+.info-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--panel-background);
+  border-top: 3px solid var(--accent);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+  padding: 20px;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+  z-index: 1000;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+/* When the panel is visible on narrow screens, slide it into view from the bottom. */
+.info-panel.visible {
+  transform: translateY(0);
+}
+
+/* On tablets and desktops, centre the panel and give it a maximum width.  The
+ * transform property includes a scale to hide the panel when not visible, and
+ * opacity animates the fade in/out.  Without overriding transform in the
+ * visible state, the translate used for centering would be lost due to the
+ * more general .info-panel.visible rule defined earlier. */
+@media (min-width: 768px) {
+  .info-panel {
+    left: 50%;
+    top: 50%;
+    right: auto;
+    bottom: auto;
+    max-width: 500px;
+    border-radius: 8px;
+    /* Start slightly scaled down and invisible */
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .info-panel.visible {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.panel-header {
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--panel-border);
+  padding-bottom: 8px;
+  position: relative;
+}
+
+.panel-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.close-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #e74c3c;
+  padding: 4px;
+}
+
+.close-btn:hover {
+  color: #c0392b;
+}
+
+.info-section {
+  margin: 12px 0;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid var(--panel-border);
+}
+
+.info-label {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+/* Selected node styling: increase stroke width and slightly brighten the fill. */
+.node circle.selected {
+  stroke-width: 4px;
+  filter: brightness(1.2);
+}
+
+/* Overlay dims the background when the panel is open. */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 999;
+  display: none;
+}
+
+.overlay.visible {
+  display: block;
+}
