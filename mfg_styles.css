@@ -38,7 +38,7 @@
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
   background-color: var(--background);
-  color: var(--text-colour);
+  color: var(--text-color);
   line-height: 1.5;
   padding: 16px;
 }
@@ -46,7 +46,7 @@ body {
 /* Container for the entire page.  On wide screens it is centred with a max
  * width to improve readability; on narrow screens it spans the full width. */
 #container {
-  max-width: 80%;
+  max-width: 70%;
   margin: 0 auto;
   background-color: var(--panel-background);
   border-radius: 8px;
@@ -58,12 +58,12 @@ h1 {
   font-size: 1.8rem;
   text-align: center;
   margin-bottom: 0.25em;
-  color: var(--colour-root);
+  color: var(--color-root);
 }
 
 .subtitle {
   text-align: center;
-  color: var(--muted-colour);
+  color: var(--muted-color);
   margin-bottom: 1em;
 }
 
@@ -73,7 +73,7 @@ h1 {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
 }
 
 .controls input[type="text"] {
@@ -125,7 +125,7 @@ svg {
 
 /* Legend uses flexbox to organise items; items wrap on small screens. */
 .legend {
-  margin-top: 16px;
+  margin-top: 4px;
   display: flex;
   flex-wrap: wrap;
   gap: 6px 12px;
@@ -146,7 +146,7 @@ svg {
   border: 2px solid #333;
 }
 
-/* Info panel overlays the diagram on small screens and appears as a centred
+/* Info panel overlays the diagram on small screens and appears as a centered
  * modal on larger screens.  Hidden by default; shown by toggling the
  * .visible class.  The transform property is used to slide the panel in
  * on small screens and to centre and scale it on larger displays. */
@@ -171,7 +171,7 @@ svg {
   transform: translateY(0);
 }
 
-/* On tablets and desktops, centre the panel and give it a maximum width.  The
+/* On tablets and desktops, center the panel and give it a maximum width.  The
  * transform property includes a scale to hide the panel when not visible, and
  * opacity animates the fade in/out.  Without overriding transform in the
  * visible state, the translate used for centering would be lost due to the
@@ -182,7 +182,7 @@ svg {
     top: 50%;
     right: auto;
     bottom: auto;
-    max-width: 90%;
+    max-width: 80%;
     border-radius: 8px;
     /* Start slightly scaled down and invisible */
     transform: translate(-50%, -50%) scale(0.8);
@@ -203,7 +203,7 @@ svg {
 }
 
 .panel-title {
-  font-size: 1.3rem;
+  font-size: 1.0rem;
   font-weight: 600;
   margin: 0;
 }
