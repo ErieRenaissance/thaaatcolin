@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Job opportunity at The Refounder Venture Studio">
+    <title>Job Details - The Refounder Venture Studio</title>
+    <link rel="stylesheet" href="RFVS_styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="page-nav">
+        <div class="container">
+            <a href="RFVS_index.html" class="nav-logo">
+                <img src="RFVS_logo.png" alt="Refounder Studio">
+            </a>
+            <a href="RFVS_careers.html" class="back-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Back to Careers
+            </a>
+        </div>
+    </nav>
+
+    <!-- Role Detail Section -->
+    <section class="role-detail-page">
+        <div class="container">
+            <div class="role-detail" id="role-detail">
+                <div class="loading-message">Loading job details...</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Application Modal -->
+    <div class="modal" id="application-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Apply for Position</h2>
+                <button class="close-button" onclick="closeApplicationModal()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="application-form" onsubmit="handleApplicationSubmit(event)">
+                <input type="hidden" id="job-id" name="job-id">
+                <input type="hidden" id="job-title" name="job-title">
+                <div class="form-group">
+                    <label for="app-name">Full Name *</label>
+                    <input type="text" id="app-name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="app-email">Email *</label>
+                    <input type="email" id="app-email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="app-phone">Phone Number *</label>
+                    <input type="tel" id="app-phone" name="phone" required>
+                </div>
+                <div class="form-group">
+                    <label for="app-linkedin">LinkedIn Profile URL</label>
+                    <input type="url" id="app-linkedin" name="linkedin" placeholder="https://linkedin.com/in/yourprofile">
+                </div>
+                <div class="form-group">
+                    <label for="app-resume">Resume *</label>
+                    <input type="file" id="app-resume" name="resume" accept=".pdf,.doc,.docx" required>
+                    <small>PDF, DOC, or DOCX (Max 5MB)</small>
+                </div>
+                <button type="submit" class="submit-button">Submit Application</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="page-footer">
+        <div class="container">
+            <p>&copy; 2024 The Refounder Venture Studio. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Success Message -->
+    <div class="toast" id="success-toast">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        <span id="toast-message">Application submitted successfully!</span>
+    </div>
+
+    <script src="RFVS_main.js"></script>
+    <script>
+        let currentJob = null;
+
+        // Get job ID from URL parameter
+        function getJobId() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('id');
+        }
+
+        // Load job details
+        async function loadJobDetails() {
+            const jobId = getJobId();
+            
+            if (!jobId) {
+                document.getElementById('role-detail').innerHTML = 
+                    '<div class="error-message">Job not found. <a href="RFVS_careers.html">Return to careers</a></div>';
+                return;
+            }
+
+            try {
+                // First load the index to find the filename
+                const indexResponse = await fetch('RFVS_jobs/RFVS_index.json');
+                const jobs = await indexResponse.json();
+                
+                const jobMeta = jobs.find(job => job.id === jobId);
+                
+                if (!jobMeta) {
+                    document.getElementById('role-detail').innerHTML = 
+                        '<div class="error-message">Job not found. <a href="RFVS_careers.html">Return to careers</a></div>';
+                    return;
+                }
+
+                // Load the full job details
+                const jobResponse = await fetch(`RFVS_jobs/${jobMeta.filename}`);
+                currentJob = await jobResponse.json();
+
+                // Update page title
+                document.title = `${currentJob.title} - The Refounder Venture Studio`;
+
+                // Display job details
+                document.getElementById('role-detail').innerHTML = `
+                    <h1>${currentJob.title}</h1>
+                    <div class="role-detail-meta">
+                        <span class="role-badge">${currentJob.type}</span>
+                        <span class="role-location">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+                                <circle cx="12" cy="10" r="3"/>
+                            </svg>
+                            ${currentJob.location}
+                        </span>
+                    </div>
+                    ${currentJob.description}
+                    <button class="apply-button" onclick="openApplicationModal()">Apply Now</button>
+                `;
+
+            } catch (error) {
+                console.error('Error loading job:', error);
+                document.getElementById('role-detail').innerHTML = 
+                    '<div class="error-message">Unable to load job details. <a href="RFVS_careers.html">Return to careers</a></div>';
+            }
+        }
+
+        // Open application modal
+        function openApplicationModal() {
+            if (currentJob) {
+                document.getElementById('modal-title').textContent = `Apply for ${currentJob.title}`;
+                document.getElementById('job-id').value = currentJob.id;
+                document.getElementById('job-title').value = currentJob.title;
+            }
+            document.getElementById('application-modal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Load job when page loads
+        document.addEventListener('DOMContentLoaded', loadJobDetails);
+    </script>
+</body>
+</html>
