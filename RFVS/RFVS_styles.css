@@ -140,7 +140,7 @@ body {
 
 /* ===== HERO SECTION ===== */
 .hero {
-    min-height: 65vh;
+    min-height: 35vh;
     display: flex;
     align-items: center;
     justify-content: center;
