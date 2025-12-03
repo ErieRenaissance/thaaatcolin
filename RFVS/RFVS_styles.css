@@ -233,7 +233,7 @@ body {
     line-height: 1.5;
     color: var(--gray-dark);
     text-align: justify;
-    margin-bottom: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
 }
 
 .mission-text p:last-child {
