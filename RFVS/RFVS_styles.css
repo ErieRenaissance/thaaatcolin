@@ -7,10 +7,10 @@
 
 :root {
     /* Color Palette - Light Theme */
-    --gold-primary: #B8945F;
-    --gold-dark: #8B6F47;
-    --gold-light: #D4B987;
-    --gold-pale: #F5EFE7;
+    --navy-primary: #2E5090;
+    --navy-dark: #1C3A5E;
+    --navy-light: #5B7FB8;
+    --navy-pale: #E8EFF7;
     --black: #1a1a1a;
     --gray-dark: #2d2d2d;
     --gray-medium: #666666;
@@ -86,7 +86,7 @@ body {
 }
 
 .back-link:hover {
-    color: var(--gold-primary);
+    color: var(--navy-primary);
 }
 
 /* ===== PAGE HEADER ===== */
@@ -144,7 +144,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--background) 0%, var(--gold-pale) 100%);
+    background: linear-gradient(135deg, var(--background) 0%, var(--navy-pale) 100%);
     position: relative;
     overflow: hidden;
     padding: var(--spacing-md) 0;
@@ -158,10 +158,10 @@ body {
     right: 0;
     bottom: 0;
     background-image: 
-        linear-gradient(30deg, var(--gold-primary) 12%, transparent 12.5%, transparent 85%, var(--gold-primary) 87%, var(--gold-primary)),
-        linear-gradient(150deg, var(--gold-primary) 12%, transparent 12.5%, transparent 85%, var(--gold-primary) 87%, var(--gold-primary)),
-        linear-gradient(30deg, var(--gold-primary) 12%, transparent 12.5%, transparent 85%, var(--gold-primary) 87%, var(--gold-primary)),
-        linear-gradient(150deg, var(--gold-primary) 12%, transparent 12.5%, transparent 85%, var(--gold-primary) 87%, var(--gold-primary));
+        linear-gradient(30deg, var(--navy-primary) 12%, transparent 12.5%, transparent 85%, var(--navy-primary) 87%, var(--navy-primary)),
+        linear-gradient(150deg, var(--navy-primary) 12%, transparent 12.5%, transparent 85%, var(--navy-primary) 87%, var(--navy-primary)),
+        linear-gradient(30deg, var(--navy-primary) 12%, transparent 12.5%, transparent 85%, var(--navy-primary) 87%, var(--navy-primary)),
+        linear-gradient(150deg, var(--navy-primary) 12%, transparent 12.5%, transparent 85%, var(--navy-primary) 87%, var(--navy-primary));
     background-size: 80px 140px;
     background-position: 0 0, 0 0, 40px 70px, 40px 70px;
     opacity: 0.175;
@@ -192,7 +192,7 @@ body {
 
 .hero-subtitle {
     font-size: clamp(1rem, 2vw, 1.25rem);
-    color: var(--gold-dark);
+    color: var(--navy-dark);
     font-weight: 400;
     letter-spacing: 0.05em;
 }
@@ -217,7 +217,7 @@ body {
     display: block;
     width: 60px;
     height: 3px;
-    background: linear-gradient(90deg, var(--gold-primary), var(--gold-light));
+    background: linear-gradient(90deg, var(--navy-primary), var(--navy-light));
     margin: var(--spacing-sm) auto 0;
     border-radius: 2px;
 }
@@ -266,14 +266,14 @@ body {
 .cta-card:hover {
     transform: translateY(-8px);
     box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
-    border-color: var(--gold-primary);
+    border-color: var(--navy-primary);
 }
 
 .cta-icon {
     width: 64px;
     height: 64px;
     margin: 0 auto var(--spacing-sm);
-    background: linear-gradient(135deg, var(--gold-primary), var(--gold-light));
+    background: linear-gradient(135deg, var(--navy-primary), var(--navy-light));
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -296,7 +296,7 @@ body {
 }
 
 .cta-button {
-    background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+    background: linear-gradient(135deg, var(--navy-primary), var(--navy-dark));
     color: var(--white);
     border: none;
     padding: 0.875rem 2rem;
@@ -338,8 +338,8 @@ body {
 
 .back-button:hover {
     background-color: var(--background);
-    border-color: var(--gold-primary);
-    color: var(--gold-primary);
+    border-color: var(--navy-primary);
+    color: var(--navy-primary);
 }
 
 .roles-grid {
@@ -359,7 +359,7 @@ body {
 }
 
 .role-card:hover {
-    border-color: var(--gold-primary);
+    border-color: var(--navy-primary);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
     transform: translateY(-4px);
 }
@@ -380,7 +380,7 @@ body {
 }
 
 .role-badge {
-    background: var(--gold-primary);
+    background: var(--navy-primary);
     color: var(--white);
     padding: 0.25rem 0.75rem;
     border-radius: 20px;
@@ -412,7 +412,7 @@ body {
 .view-role-button {
     background: none;
     border: none;
-    color: var(--gold-primary);
+    color: var(--navy-primary);
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
@@ -421,7 +421,7 @@ body {
 }
 
 .view-role-button:hover {
-    color: var(--gold-dark);
+    color: var(--navy-dark);
 }
 
 /* ===== ROLE DETAIL SECTION ===== */
@@ -487,7 +487,7 @@ body {
 }
 
 .apply-button {
-    background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+    background: linear-gradient(135deg, var(--navy-primary), var(--navy-dark));
     color: var(--white);
     border: none;
     padding: 0.875rem 2.5rem;
@@ -594,7 +594,7 @@ form {
 .form-group input:focus,
 .form-group textarea:focus {
     outline: none;
-    border-color: var(--gold-primary);
+    border-color: var(--navy-primary);
 }
 
 .form-group small {
@@ -605,7 +605,7 @@ form {
 }
 
 .submit-button {
-    background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+    background: linear-gradient(135deg, var(--navy-primary), var(--navy-dark));
     color: var(--white);
     border: none;
     padding: 1rem 2rem;
@@ -650,7 +650,7 @@ form {
 }
 
 .toast svg {
-    color: var(--gold-primary);
+    color: var(--navy-primary);
 }
 
 /* ===== ANIMATIONS ===== */
@@ -757,11 +757,11 @@ form {
 }
 
 .error-message {
-    color: var(--gold-dark);
+    color: var(--navy-dark);
 }
 
 .error-message a {
-    color: var(--gold-primary);
+    color: var(--navy-primary);
     text-decoration: none;
     font-weight: 600;
 }
