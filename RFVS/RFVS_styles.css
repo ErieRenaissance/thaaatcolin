@@ -162,8 +162,8 @@ body {
         linear-gradient(150deg, var(--navy-primary) 12%, transparent 12.5%, transparent 85%, var(--navy-primary) 87%, var(--navy-primary)),
         linear-gradient(30deg, var(--navy-primary) 12%, transparent 12.5%, transparent 85%, var(--navy-primary) 87%, var(--navy-primary)),
         linear-gradient(150deg, var(--navy-primary) 12%, transparent 12.5%, transparent 85%, var(--navy-primary) 87%, var(--navy-primary));
-    background-size: 80px 140px;
-    background-position: 0 0, 0 0, 40px 80px, 40px 80px;
+    background-size: 70px 140px;
+    background-position: 0 0, 0 0, 40px 70px, 40px 70px;
     opacity: 0.175;
 }
 
