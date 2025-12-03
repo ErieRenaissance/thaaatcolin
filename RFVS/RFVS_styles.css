@@ -225,13 +225,14 @@ body {
 .mission-content {
     max-width: 1200px;
     margin: 0 auto;
-    text-align: justify;
+  /* text-align: justify;*/
 }
 
 .mission-text p {
     font-size: 1rem;
     line-height: 1.5;
     color: var(--gray-dark);
+    text-align: justify;
     margin-bottom: var(--spacing-md);
 }
 
