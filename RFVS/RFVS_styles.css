@@ -164,7 +164,7 @@ body {
         linear-gradient(150deg, var(--gold-primary) 12%, transparent 12.5%, transparent 85%, var(--gold-primary) 87%, var(--gold-primary));
     background-size: 80px 140px;
     background-position: 0 0, 0 0, 40px 70px, 40px 70px;
-    opacity: 0.15;
+    opacity: 0.175;
 }
 
 .hero-content {
@@ -175,7 +175,7 @@ body {
 }
 
 .hero-logo {
-    max-width: 400px;
+    max-width: 200px;
     height: auto;
     margin-bottom: var(--spacing-xs);
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
