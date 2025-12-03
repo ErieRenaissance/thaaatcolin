@@ -175,18 +175,18 @@ body {
 }
 
 .hero-logo {
-    max-width: 200px;
+    max-width: 300px;
     height: auto;
     margin-bottom: var(--spacing-xs);
     /*box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);*/
-    animation: none;
+   /* animation: none;*/
 }
 
 .hero-title {
     font-size: clamp(2rem, 5vw, 3.5rem);
     font-weight: 700;
     color: var(--black);
-    margin-bottom: var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
     letter-spacing: -0.02em;
 }
 
@@ -194,12 +194,12 @@ body {
     font-size: clamp(1rem, 2vw, 1.25rem);
     color: var(--navy-dark);
     font-weight: 400;
-    letter-spacing: 0.05em;
+    letter-spacing: -0.05em;
 }
 
 /* ===== MISSION SECTION ===== */
 .mission {
-    padding: var(--spacing-lg) 0;
+    padding: var(--spacing-md) 0;
     background-color: var(--white);
 }
 
@@ -207,7 +207,7 @@ body {
     font-size: clamp(1.5rem, 4vw, 2rem);
     font-weight: 700;
     color: var(--black);
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
     text-align: center;
     position: relative;
 }
@@ -218,7 +218,7 @@ body {
     width: 60px;
     height: 2px;
     background: linear-gradient(90deg, var(--navy-primary), var(--navy-light));
-    margin: var(--spacing-sm) auto 0;
+    margin: var(--spacing-xs) auto 0;
     border-radius: 2px;
 }
 
@@ -233,7 +233,7 @@ body {
     line-height: 1.5;
     color: var(--gray-dark);
     text-align: justify;
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-xs);
 }
 
 .mission-text p:last-child {
