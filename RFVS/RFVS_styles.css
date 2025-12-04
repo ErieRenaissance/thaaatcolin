@@ -262,14 +262,14 @@ body {
 }
 
 .cta-card {
-    background: var(--white);
+    background: var(--gray-light);
     padding: var(--spacing-lg);
     border-radius: 12px;
     text-align: center;
     cursor: pointer;
     transition: all var(--transition-smooth);
     border: 1px solid var(--gray-light);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0);
 }
 
 .cta-card:hover {
