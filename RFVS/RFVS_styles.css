@@ -136,20 +136,20 @@ body {
     padding-top: var(--spacing-lg);
 }
 
-/* ===== HERO SECTION (Strategy 2: Dark Industrial) ===== */
+/* ===== HERO SECTION (Dark Industrial) ===== */
 .hero {
-    min-height: 50vh; /* Increased height for better presence */
+    min-height: 40vh; 
     display: flex;
     align-items: center;
     justify-content: center;
     background-color: var(--navy-dark);
     position: relative;
     overflow: hidden;
-    padding: var(--spacing-lg) 0;
+    padding: var(--spacing-sm) 0;
     color: var(--white);
 }
 
-/* Added Noise Texture for Industrial Feel */
+/* Noise Texture*/
 .hero::before {
     content: '';
     position: absolute;
@@ -158,7 +158,7 @@ body {
     right: 0; 
     bottom: 0;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
-    opacity: 0.3;
+    opacity: 0.5;
     pointer-events: none;
     z-index: 0;
 }
@@ -168,7 +168,7 @@ body {
     position: relative;
     z-index: 1;
     animation: fadeInUp 1s ease;
-    max-width: 900px;
+    max-width: 1000px;
     margin: 0 auto;
 }
 
@@ -176,21 +176,22 @@ body {
     max-width: 200px;
     height: auto;
     margin-bottom: var(--spacing-md);
-    /* Add a subtle glow/border to separate logo from dark background */
+    /* Subtle glow/border to separate logo from dark background */
     border-radius: 4px;
-    box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
     background-color: var(--white); /* Ensures logo png transparency doesn't look odd */
     padding: 5px;
 }
 
-/* Strategy 3: Typography Refinement */
+/* Content */
 .hero-title {
     font-size: clamp(2.5rem, 6vw, 4rem);
     font-weight: 800;
+    text-transform: uppercase;
     color: var(--white);
     margin-bottom: var(--spacing-xs);
     letter-spacing: -0.03em;
-    line-height: 1.1;
+    line-height: 1.0;
     text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
@@ -199,14 +200,14 @@ body {
     color: var(--navy-pale);
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.15em; /* Wide tracking for premium look */
-    margin-top: var(--spacing-sm);
+    letter-spacing: 0.15em; /* Wide tracking */
+    margin-top: var(--spacing-xs);
     opacity: 0.9;
 }
 
 /* ===== MISSION SECTION ===== */
 .mission {
-    padding: var(--spacing-lg) 0;
+    padding: var(--spacing-sm) 0;
     background-color: var(--white);
 }
 
@@ -214,7 +215,7 @@ body {
     font-size: clamp(1.5rem, 4vw, 2rem);
     font-weight: 700;
     color: var(--black);
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
     text-align: center;
     position: relative;
 }
@@ -225,21 +226,21 @@ body {
     width: 60px;
     height: 3px;
     background: linear-gradient(90deg, var(--navy-primary), var(--navy-light));
-    margin: var(--spacing-sm) auto 0;
+    margin: var(--spacing-xs) auto 0;
     border-radius: 2px;
 }
 
 .mission-content {
-    max-width: 900px; /* Reduced width for better reading experience */
+    max-width: 900px; 
     margin: 0 auto;
 }
 
 .mission-text p {
-    font-size: 1.125rem;
-    line-height: 1.8;
+    font-size: 1rem;
+    line-height: 1.5;
     color: var(--gray-dark);
-    text-align: left; /* Changed from justify to left for better accessibility */
-    margin-bottom: var(--spacing-md);
+    text-align: left; 
+    margin-bottom: var(--spacing-sm);
 }
 
 .mission-text p:last-child {
