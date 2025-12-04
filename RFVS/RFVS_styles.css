@@ -55,12 +55,12 @@ body {
 /* ===== NAVIGATION ===== */
 .page-nav {
     background: var(--white);
-    border-bottom: 2px solid var(--gray-light);
+    border-bottom: 1px solid var(--gray-light);
     padding: var(--spacing-sm) 0;
     position: sticky;
     top: 0;
     z-index: 100;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .page-nav .container {
@@ -70,7 +70,7 @@ body {
 }
 
 .nav-logo img {
-    height: 75px;
+    height: 60px; /* Slightly reduced for cleaner nav bar */
     width: auto;
 }
 
@@ -89,7 +89,7 @@ body {
     color: var(--navy-primary);
 }
 
-/* ===== PAGE HEADER ===== */
+/* ===== PAGE HEADER (Standard Pages) ===== */
 .page-header {
     text-align: center;
     max-width: 800px;
@@ -113,7 +113,7 @@ body {
 /* ===== PAGE FOOTER ===== */
 .page-footer {
     background: var(--background-secondary);
-    border-top: 2px solid var(--gray-light);
+    border-top: 1px solid var(--gray-light);
     padding: var(--spacing-lg) 0;
     margin-top: var(--spacing-xl);
     text-align: center;
@@ -124,47 +124,43 @@ body {
     font-size: 0.9375rem;
 }
 
-/* ===== CAREERS PAGE ===== */
-.careers-page {
+/* ===== CAREERS & ROLE PAGES ===== */
+.careers-page,
+.role-detail-page {
     min-height: 60vh;
     padding: 0 0 var(--spacing-lg);
     background-color: var(--background);
 }
 
-/* ===== ROLE DETAIL PAGE ===== */
 .role-detail-page {
-    padding: var(--spacing-lg) 0;
-    background-color: var(--background);
-    min-height: 60vh;
+    padding-top: var(--spacing-lg);
 }
 
-/* ===== HERO SECTION ===== */
+/* ===== HERO SECTION (Strategy 2: Dark Industrial) ===== */
 .hero {
-    min-height: 35vh;
+    min-height: 50vh; /* Increased height for better presence */
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--background) 0%, var(--navy-pale) 100%);
+    background-color: var(--navy-dark);
     position: relative;
     overflow: hidden;
-    padding: var(--spacing-md) 0;
+    padding: var(--spacing-lg) 0;
+    color: var(--white);
 }
 
+/* Added Noise Texture for Industrial Feel */
 .hero::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
+    top: 0; 
+    left: 0; 
+    right: 0; 
     bottom: 0;
-    background-image: 
-        linear-gradient(30deg, var(--navy-primary) 12%, transparent 12.5%, transparent 85%, var(--navy-primary) 87%, var(--navy-primary)),
-        linear-gradient(150deg, var(--navy-primary) 12%, transparent 12.5%, transparent 85%, var(--navy-primary) 87%, var(--navy-primary)),
-        linear-gradient(30deg, var(--navy-primary) 12%, transparent 12.5%, transparent 85%, var(--navy-primary) 87%, var(--navy-primary)),
-        linear-gradient(150deg, var(--navy-primary) 12%, transparent 12.5%, transparent 85%, var(--navy-primary) 87%, var(--navy-primary));
-    background-size: 70px 140px;
-    background-position: 0 0, 0 0, 40px 70px, 40px 70px;
-    opacity: 0.175;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
 }
 
 .hero-content {
@@ -172,34 +168,45 @@ body {
     position: relative;
     z-index: 1;
     animation: fadeInUp 1s ease;
+    max-width: 900px;
+    margin: 0 auto;
 }
 
 .hero-logo {
     max-width: 200px;
     height: auto;
-    margin-bottom: var(--spacing-xs);
-    /*box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);*/
-   /* animation: none;*/
+    margin-bottom: var(--spacing-md);
+    /* Add a subtle glow/border to separate logo from dark background */
+    border-radius: 4px;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+    background-color: var(--white); /* Ensures logo png transparency doesn't look odd */
+    padding: 5px;
 }
 
+/* Strategy 3: Typography Refinement */
 .hero-title {
-    font-size: clamp(2rem, 5vw, 3.5rem);
-    font-weight: 700;
-    color: var(--black);
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    font-weight: 800;
+    color: var(--white);
     margin-bottom: var(--spacing-xs);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
 .hero-subtitle {
-    font-size: clamp(1rem, 2vw, 1.25rem);
-    color: var(--navy-dark);
-    font-weight: 400;
-    letter-spacing: -0.05em;
+    font-size: clamp(0.875rem, 1.5vw, 1.125rem);
+    color: var(--navy-pale);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.15em; /* Wide tracking for premium look */
+    margin-top: var(--spacing-sm);
+    opacity: 0.9;
 }
 
 /* ===== MISSION SECTION ===== */
 .mission {
-    padding: var(--spacing-md) 0;
+    padding: var(--spacing-lg) 0;
     background-color: var(--white);
 }
 
@@ -207,7 +214,7 @@ body {
     font-size: clamp(1.5rem, 4vw, 2rem);
     font-weight: 700;
     color: var(--black);
-    margin-bottom: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
     text-align: center;
     position: relative;
 }
@@ -216,23 +223,22 @@ body {
     content: '';
     display: block;
     width: 60px;
-    height: 2px;
+    height: 3px;
     background: linear-gradient(90deg, var(--navy-primary), var(--navy-light));
-    margin: var(--spacing-xs) auto 0;
+    margin: var(--spacing-sm) auto 0;
     border-radius: 2px;
 }
 
 .mission-content {
-    max-width: 1200px;
+    max-width: 900px; /* Reduced width for better reading experience */
     margin: 0 auto;
-  /* text-align: justify;*/
 }
 
 .mission-text p {
-    font-size: 1rem;
-    line-height: 1.5;
+    font-size: 1.125rem;
+    line-height: 1.8;
     color: var(--gray-dark);
-    text-align: justify;
+    text-align: left; /* Changed from justify to left for better accessibility */
     margin-bottom: var(--spacing-md);
 }
 
@@ -242,7 +248,7 @@ body {
 
 /* ===== CTA SECTION ===== */
 .cta-section {
-    padding: var(--spacing-lg) 0;
+    padding: var(--spacing-xl) 0;
     background-color: var(--background-secondary);
 }
 
@@ -250,7 +256,7 @@ body {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: var(--spacing-md);
-    max-width: 900px;
+    max-width: 1000px;
     margin: 0 auto;
 }
 
@@ -261,14 +267,14 @@ body {
     text-align: center;
     cursor: pointer;
     transition: all var(--transition-smooth);
-    border: 2px solid var(--gray-light);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--gray-light);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
 }
 
 .cta-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
-    border-color: var(--navy-primary);
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+    border-color: var(--navy-light);
 }
 
 .cta-icon {
@@ -281,11 +287,12 @@ body {
     align-items: center;
     justify-content: center;
     color: var(--white);
+    font-size: 1.5rem;
 }
 
 .cta-card h3 {
     font-size: 1.375rem;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--black);
     margin-bottom: var(--spacing-sm);
 }
@@ -298,7 +305,7 @@ body {
 }
 
 .cta-button {
-    background: linear-gradient(135deg, var(--navy-primary), var(--navy-dark));
+    background: var(--navy-primary);
     color: var(--white);
     border: none;
     padding: 0.875rem 2rem;
@@ -311,8 +318,9 @@ body {
 }
 
 .cta-button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 8px 16px rgba(184, 148, 95, 0.3);
+    background: var(--navy-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(46, 80, 144, 0.25);
 }
 
 /* ===== ROLES SECTION ===== */
@@ -326,9 +334,9 @@ body {
 .back-button {
     background: none;
     border: 1px solid var(--gray-light);
-    padding: 0.75rem 1.5rem;
+    padding: 0.5rem 1.25rem;
     border-radius: 6px;
-    font-size: 1rem;
+    font-size: 0.9375rem;
     color: var(--gray-dark);
     cursor: pointer;
     transition: all var(--transition-fast);
@@ -347,13 +355,13 @@ body {
 .roles-grid {
     display: grid;
     gap: var(--spacing-md);
-    max-width: 800px;
+    max-width: 900px;
     margin: 0 auto;
 }
 
 .role-card {
     background: var(--white);
-    border: 2px solid var(--gray-light);
+    border: 1px solid var(--gray-light);
     border-radius: 12px;
     padding: var(--spacing-lg);
     cursor: pointer;
@@ -362,8 +370,8 @@ body {
 
 .role-card:hover {
     border-color: var(--navy-primary);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+    transform: translateY(-2px);
 }
 
 .role-header {
@@ -377,17 +385,18 @@ body {
 
 .role-title {
     font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--black);
+    font-weight: 700;
+    color: var(--navy-dark);
 }
 
 .role-badge {
-    background: var(--navy-primary);
-    color: var(--white);
+    background: var(--navy-pale);
+    color: var(--navy-dark);
     padding: 0.25rem 0.75rem;
     border-radius: 20px;
-    font-size: 0.875rem;
-    font-weight: 500;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
 }
 
 .role-summary {
@@ -401,6 +410,9 @@ body {
     display: flex;
     gap: var(--spacing-md);
     margin-bottom: var(--spacing-md);
+    border-top: 1px solid var(--gray-light);
+    border-bottom: 1px solid var(--gray-light);
+    padding: var(--spacing-sm) 0;
 }
 
 .role-location {
@@ -408,14 +420,15 @@ body {
     align-items: center;
     gap: 0.5rem;
     font-size: 0.875rem;
-    color: var(--gray-medium);
+    color: var(--gray-dark);
+    font-weight: 500;
 }
 
 .view-role-button {
     background: none;
     border: none;
     color: var(--navy-primary);
-    font-size: 1rem;
+    font-size: 0.9375rem;
     font-weight: 600;
     cursor: pointer;
     padding: 0;
@@ -424,13 +437,13 @@ body {
 
 .view-role-button:hover {
     color: var(--navy-dark);
+    text-decoration: underline;
 }
 
 /* ===== ROLE DETAIL SECTION ===== */
 .role-detail-section {
     padding: var(--spacing-lg) 0;
     background-color: var(--white);
-    min-height: auto;
     animation: fadeIn 0.3s ease;
 }
 
@@ -440,71 +453,68 @@ body {
 }
 
 .role-detail h1 {
-    font-size: 2rem;
-    font-weight: 700;
+    font-size: 2.25rem;
+    font-weight: 800;
     color: var(--black);
     margin-bottom: var(--spacing-sm);
+    line-height: 1.2;
 }
 
 .role-detail-meta {
     display: flex;
     gap: var(--spacing-md);
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
     flex-wrap: wrap;
 }
 
-.role-detail h2 {
-    font-size: 1.375rem;
-    font-weight: 600;
+.role-detail h2,
+.role-detail h3 {
     color: var(--black);
-    margin-top: var(--spacing-md);
+    font-weight: 700;
+    margin-top: var(--spacing-lg);
     margin-bottom: var(--spacing-sm);
 }
 
-.role-detail h3 {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--black);
-    margin-top: var(--spacing-md);
-    margin-bottom: var(--spacing-sm);
-}
+.role-detail h2 { font-size: 1.5rem; }
+.role-detail h3 { font-size: 1.25rem; }
 
 .role-detail p {
-    font-size: 1rem;
+    font-size: 1.0625rem;
     line-height: 1.7;
     color: var(--gray-dark);
-    margin-bottom: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
 }
 
 .role-detail ul {
-    margin-bottom: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
     padding-left: var(--spacing-md);
 }
 
 .role-detail li {
-    font-size: 1rem;
+    font-size: 1.0625rem;
     line-height: 1.7;
     color: var(--gray-dark);
-    margin-bottom: var(--spacing-xs);
+    margin-bottom: 0.5rem;
 }
 
 .apply-button {
-    background: linear-gradient(135deg, var(--navy-primary), var(--navy-dark));
+    background: var(--navy-primary);
     color: var(--white);
     border: none;
-    padding: 0.875rem 2.5rem;
+    padding: 1rem 3rem;
     border-radius: 6px;
-    font-size: 1rem;
+    font-size: 1.125rem;
     font-weight: 600;
     cursor: pointer;
     transition: all var(--transition-smooth);
-    margin-top: var(--spacing-md);
+    margin-top: var(--spacing-lg);
     display: inline-block;
 }
 
 .apply-button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 8px 16px rgba(184, 148, 95, 0.3);
+    background: var(--navy-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(46, 80, 144, 0.2);
 }
 
 /* ===== MODAL STYLES ===== */
@@ -515,10 +525,11 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(26, 26, 26, 0.8); /* Darker backdrop */
     z-index: 1000;
     align-items: center;
     justify-content: center;
+    backdrop-filter: blur(4px);
     animation: fadeIn 0.3s ease;
 }
 
@@ -534,6 +545,7 @@ body {
     max-height: 90vh;
     overflow-y: auto;
     position: relative;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
     animation: slideUp 0.3s ease;
 }
 
@@ -542,12 +554,13 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: var(--spacing-md);
-    border-bottom: 2px solid var(--gray-light);
+    border-bottom: 1px solid var(--gray-light);
+    background: var(--background);
 }
 
 .modal-header h2 {
-    font-size: 1.75rem;
-    font-weight: 600;
+    font-size: 1.5rem;
+    font-weight: 700;
     color: var(--black);
 }
 
@@ -558,6 +571,8 @@ body {
     color: var(--gray-medium);
     transition: color var(--transition-fast);
     padding: 0.5rem;
+    font-size: 1.5rem;
+    line-height: 1;
 }
 
 .close-button:hover {
@@ -576,20 +591,20 @@ form {
 .form-group label {
     display: block;
     font-weight: 600;
-    color: var(--black);
-    margin-bottom: var(--spacing-xs);
-    font-size: 0.875rem;
+    color: var(--navy-dark);
+    margin-bottom: 0.5rem;
+    font-size: 0.9375rem;
 }
 
 .form-group input,
 .form-group textarea {
     width: 100%;
     padding: 0.875rem;
-    border: 2px solid var(--gray-light);
+    border: 1px solid var(--gray-light);
     border-radius: 6px;
     font-size: 1rem;
     font-family: var(--font-primary);
-    transition: border-color var(--transition-fast);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     background-color: var(--white);
 }
 
@@ -597,17 +612,18 @@ form {
 .form-group textarea:focus {
     outline: none;
     border-color: var(--navy-primary);
+    box-shadow: 0 0 0 3px rgba(46, 80, 144, 0.1);
 }
 
 .form-group small {
     display: block;
-    margin-top: var(--spacing-xs);
+    margin-top: 0.5rem;
     color: var(--gray-medium);
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
 }
 
 .submit-button {
-    background: linear-gradient(135deg, var(--navy-primary), var(--navy-dark));
+    background: var(--navy-primary);
     color: var(--white);
     border: none;
     padding: 1rem 2rem;
@@ -620,12 +636,16 @@ form {
 }
 
 .submit-button:hover {
+    background: var(--navy-dark);
     transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(184, 148, 95, 0.3);
+    box-shadow: 0 4px 12px rgba(46, 80, 144, 0.2);
 }
 
 .submit-button:disabled {
-    opacity: 0.5;
+    background: var(--gray-light);
+    color: var(--gray-medium);
+    transform: none;
+    box-shadow: none;
     cursor: not-allowed;
 }
 
@@ -635,7 +655,7 @@ form {
     bottom: -100px;
     left: 50%;
     transform: translateX(-50%);
-    background: var(--black);
+    background: var(--navy-dark);
     color: var(--white);
     padding: 1rem 2rem;
     border-radius: 8px;
@@ -651,24 +671,16 @@ form {
     bottom: 2rem;
 }
 
-.toast svg {
-    color: var(--navy-primary);
-}
-
 /* ===== ANIMATIONS ===== */
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 @keyframes fadeInUp {
     from {
         opacity: 0;
-        transform: translateY(30px);
+        transform: translateY(20px);
     }
     to {
         opacity: 1;
@@ -678,7 +690,7 @@ form {
 
 @keyframes slideUp {
     from {
-        transform: translateY(50px);
+        transform: translateY(40px);
         opacity: 0;
     }
     to {
@@ -687,24 +699,19 @@ form {
     }
 }
 
-@keyframes float {
-    0%, 100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-10px);
-    }
-}
-
 /* ===== RESPONSIVE DESIGN ===== */
 @media (max-width: 768px) {
     .hero {
-        min-height: 60vh;
-        padding: var(--spacing-md) 0;
+        min-height: 40vh;
+        padding: var(--spacing-xl) 0;
+    }
+    
+    .hero-title {
+        font-size: 2.5rem;
     }
     
     .hero-logo {
-        max-width: 280px;
+        max-width: 160px;
     }
     
     .cta-grid {
@@ -718,14 +725,11 @@ form {
     
     .modal-content {
         width: 95%;
+        margin: var(--spacing-sm);
     }
     
     .page-nav .container {
-        flex-direction: row;
-    }
-    
-    .nav-logo img {
-        height: 40px;
+        padding: 0 var(--spacing-sm);
     }
 }
 
@@ -734,12 +738,12 @@ form {
         padding: 0 var(--spacing-sm);
     }
     
-    .mission-text p {
-        font-size: 0.9375rem;
+    .hero-title {
+        font-size: 2rem;
     }
     
-    .hero-logo {
-        max-width: 220px;
+    .mission-text p {
+        font-size: 1rem;
     }
     
     .back-link {
@@ -748,7 +752,6 @@ form {
 }
 
 /* ===== DYNAMIC JOB LOADING STYLES ===== */
-/* Loading and Error Messages */
 .loading-message,
 .no-jobs-message,
 .error-message {
@@ -759,16 +762,11 @@ form {
 }
 
 .error-message {
-    color: var(--navy-dark);
+    color: #e53e3e;
 }
 
 .error-message a {
     color: var(--navy-primary);
-    text-decoration: none;
-    font-weight: 600;
-}
-
-.error-message a:hover {
     text-decoration: underline;
 }
 
