@@ -103,12 +103,28 @@
         </div>
     </section>
 
-    <!-- Footer -->
-    <footer class="page-footer">
-        <div class="container">
-            <p>&copy; 2025 The Keystone RE:Foundry. All rights reserved.</p>
-        </div>
-    </footer>
+    <!-- Footer placeholder -->
+    <div id="rfvs-footer"></div>
+
+    <script>
+        // Load shared footer HTML into the placeholder
+        (function () {
+            var footerContainer = document.getElementById('rfvs-footer');
+            if (!footerContainer) return;
+
+            fetch('RFVS_footer.html')
+                .then(function (response) { return response.text(); })
+                .then(function (html) {
+                    footerContainer.innerHTML = html;
+                })
+                .catch(function (error) {
+                    console.error('Error loading footer:', error);
+                });
+        })();
+    </script>
+</body>
+</html>
+
 
     <script src="RFVS_main.js"></script>
     <script>
