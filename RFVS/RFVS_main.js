@@ -173,6 +173,91 @@ function simulateApiCall() {
     });
 }
 
+// ===== HAMBURGER MENU CONTROLS =====
+
+function openNavMenu() {
+    const overlay = document.getElementById('nav-overlay');
+    const hamburger = document.getElementById('hamburger-btn');
+    
+    if (overlay) {
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    if (hamburger) {
+        hamburger.classList.add('active');
+    }
+}
+
+function closeNavMenu() {
+    const overlay = document.getElementById('nav-overlay');
+    const hamburger = document.getElementById('hamburger-btn');
+    
+    if (overlay) {
+        overlay.classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+    
+    if (hamburger) {
+        hamburger.classList.remove('active');
+    }
+}
+
+// Initialize hamburger menu
+document.addEventListener('DOMContentLoaded', function() {
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const closeBtn = document.getElementById('nav-close-btn');
+    const overlay = document.getElementById('nav-overlay');
+    
+    // Hamburger button click (works for both regular and hero hamburger)
+    if (hamburgerBtn) {
+        hamburgerBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (overlay && overlay.classList.contains('active')) {
+                closeNavMenu();
+            } else {
+                openNavMenu();
+            }
+        });
+    }
+    
+    // Close button click
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            closeNavMenu();
+        });
+    }
+    
+    // Close menu when clicking outside content
+    if (overlay) {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) {
+                closeNavMenu();
+            }
+        });
+    }
+    
+    // Close menu on ESC key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && overlay && overlay.classList.contains('active')) {
+            closeNavMenu();
+        }
+    });
+    
+    // Close menu when clicking on a nav link
+    const navLinks = document.querySelectorAll('.nav-menu-item');
+    navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            // Small delay to allow navigation to start
+            setTimeout(closeNavMenu, 100);
+        });
+    });
+});
+
 // ===== FORM INTEGRATION NOTES =====
 /*
 BACKEND INTEGRATION:
