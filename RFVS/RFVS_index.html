@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Navigation Overlay (No visible nav bar on home page) -->
+    <!-- Navigation Overlay -->
     <div class="nav-overlay" id="nav-overlay">
         <div class="nav-overlay-content">
             <button class="nav-close-btn" id="nav-close-btn" aria-label="Close navigation menu">
@@ -177,6 +177,153 @@
         <span id="toast-message">Message sent successfully!</span>
     </div>
 
-    <script src="RFVS_main.js"></script>
+    <!-- Inline JavaScript for Testing -->
+    <script>
+        console.log('JavaScript loaded and running');
+
+        // Hamburger Menu Functions
+        function openNavMenu() {
+            console.log('Opening nav menu');
+            const overlay = document.getElementById('nav-overlay');
+            const hamburger = document.getElementById('hamburger-btn');
+            
+            if (overlay) {
+                overlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+                console.log('Overlay opened');
+            } else {
+                console.error('Overlay not found');
+            }
+            
+            if (hamburger) {
+                hamburger.classList.add('active');
+            }
+        }
+
+        function closeNavMenu() {
+            console.log('Closing nav menu');
+            const overlay = document.getElementById('nav-overlay');
+            const hamburger = document.getElementById('hamburger-btn');
+            
+            if (overlay) {
+                overlay.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+            
+            if (hamburger) {
+                hamburger.classList.remove('active');
+            }
+        }
+
+        // Modal Functions
+        function openContactModal() {
+            const modal = document.getElementById('contact-modal');
+            if (modal) {
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function closeContactModal() {
+            const modal = document.getElementById('contact-modal');
+            if (modal) {
+                modal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+                const form = document.getElementById('contact-form');
+                if (form) form.reset();
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('success-toast');
+            const toastMessage = document.getElementById('toast-message');
+            if (toast && toastMessage) {
+                toastMessage.textContent = message;
+                toast.classList.add('show');
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 4000);
+            }
+        }
+
+        async function handleContactSubmit(event) {
+            event.preventDefault();
+            showToast('Message sent successfully! We\'ll be in touch soon.');
+            closeContactModal();
+        }
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM Content Loaded');
+            
+            const hamburgerBtn = document.getElementById('hamburger-btn');
+            const closeBtn = document.getElementById('nav-close-btn');
+            const overlay = document.getElementById('nav-overlay');
+            
+            console.log('Hamburger button:', hamburgerBtn);
+            console.log('Close button:', closeBtn);
+            console.log('Overlay:', overlay);
+            
+            // Hamburger button click
+            if (hamburgerBtn) {
+                hamburgerBtn.addEventListener('click', function(e) {
+                    console.log('Hamburger button clicked!');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    if (overlay && overlay.classList.contains('active')) {
+                        closeNavMenu();
+                    } else {
+                        openNavMenu();
+                    }
+                });
+                console.log('Hamburger click listener attached');
+            } else {
+                console.error('Hamburger button not found!');
+            }
+            
+            // Close button click
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function(e) {
+                    console.log('Close button clicked!');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeNavMenu();
+                });
+            }
+            
+            // Close on overlay click
+            if (overlay) {
+                overlay.addEventListener('click', function(e) {
+                    if (e.target === overlay) {
+                        closeNavMenu();
+                    }
+                });
+            }
+            
+            // Close on ESC key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && overlay && overlay.classList.contains('active')) {
+                    closeNavMenu();
+                }
+            });
+            
+            // Close on nav link click
+            const navLinks = document.querySelectorAll('.nav-menu-item');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    setTimeout(closeNavMenu, 100);
+                });
+            });
+
+            // Close modals on outside click
+            window.onclick = function(event) {
+                const contactModal = document.getElementById('contact-modal');
+                if (event.target === contactModal) {
+                    closeContactModal();
+                }
+            }
+        });
+    </script>
 </body>
 </html>
