@@ -70,7 +70,7 @@ body {
 }
 
 .nav-logo img {
-    height: 60px; /* Slightly reduced for cleaner nav bar */
+    height: 60px;
     width: auto;
 }
 
@@ -176,14 +176,12 @@ body {
     max-width: 200px;
     height: auto;
     margin-bottom: var(--spacing-md);
-    /* Subtle glow/border to separate logo from dark background */
     border-radius: 4px;
     box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
-    background-color: var(--white); /* Ensures logo png transparency doesn't look odd */
+    background-color: var(--white);
     padding: 5px;
 }
 
-/* Content */
 .hero-title {
     font-size: clamp(2.5rem, 6vw, 4rem);
     font-weight: 800;
@@ -200,9 +198,57 @@ body {
     color: var(--navy-pale);
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.15em; /* Wide tracking */
+    letter-spacing: 0.15em;
     margin-top: var(--spacing-xs);
     opacity: 0.9;
+}
+
+/* ===== HERO HAMBURGER BUTTON (HOME PAGE ONLY) ===== */
+.hero-hamburger-btn {
+    position: absolute;
+    top: var(--spacing-lg);
+    right: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 36px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 6px 8px;
+    z-index: 101;
+    transition: all var(--transition-smooth);
+    backdrop-filter: blur(10px);
+}
+
+.hero-hamburger-btn span {
+    display: block;
+    width: 100%;
+    height: 3px;
+    background: var(--white);
+    border-radius: 2px;
+    transition: all var(--transition-smooth);
+}
+
+.hero-hamburger-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.hero-hamburger-btn.active span:nth-child(1) {
+    transform: translateY(10.5px) rotate(45deg);
+}
+
+.hero-hamburger-btn.active span:nth-child(2) {
+    opacity: 0;
+}
+
+.hero-hamburger-btn.active span:nth-child(3) {
+    transform: translateY(-10.5px) rotate(-45deg);
 }
 
 /* ===== MISSION SECTION ===== */
@@ -526,7 +572,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(26, 26, 26, 0.8); /* Darker backdrop */
+    background-color: rgba(26, 26, 26, 0.8);
     z-index: 1000;
     align-items: center;
     justify-content: center;
@@ -1621,7 +1667,7 @@ form {
     align-items: center;
 }
 
-/* Hamburger Button */
+/* Hamburger Button (for other pages) */
 .hamburger-btn {
     display: flex;
     flex-direction: column;
@@ -1833,7 +1879,7 @@ form {
         color: var(--navy-primary);
     }
     
-    /* Keep hamburger menu available on desktop but styled differently */
+    /* Keep hamburger menu available on desktop */
     .hamburger-btn {
         display: flex;
     }
@@ -1852,6 +1898,14 @@ form {
     
     .hero-logo {
         max-width: 160px;
+    }
+    
+    .hero-hamburger-btn {
+        top: var(--spacing-md);
+        right: var(--spacing-md);
+        width: 32px;
+        height: 24px;
+        padding: 4px 6px;
     }
     
     .cta-grid {
