@@ -11,23 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="main-nav">
-        <div class="container">
-            <a href="RFVS_index.html" class="nav-logo">
-                <img src="RFVS_logo.png" alt="The Keystone RE:Foundry">
-            </a>
-            
-            <!-- Hamburger Menu Button -->
-            <button class="hamburger-btn" id="hamburger-btn" aria-label="Toggle navigation menu">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-        </div>
-    </nav>
-
-    <!-- Navigation Overlay -->
+    <!-- Navigation Overlay (No visible nav bar on home page) -->
     <div class="nav-overlay" id="nav-overlay">
         <div class="nav-overlay-content">
             <button class="nav-close-btn" id="nav-close-btn" aria-label="Close navigation menu">
@@ -89,8 +73,15 @@
         </div>
     </div>
 
-    <!-- Hero Section -->
+    <!-- Hero Section with Hamburger -->
     <section class="hero">
+        <!-- Hamburger Menu Button (positioned in hero) -->
+        <button class="hero-hamburger-btn" id="hamburger-btn" aria-label="Toggle navigation menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        
         <div class="container">
             <div class="hero-content">
                 <img src="RFVS_logo.png" alt="Keystone Re:Foundry Logo" class="hero-logo">
