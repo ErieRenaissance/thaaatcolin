@@ -278,13 +278,12 @@ body {
 }
 
 .hero-logo {
-    max-width: 150px;
+    max-width: 200px;
     height: auto;
-    margin-bottom: var(--spacing-xs);
-    border-radius: 4px;
-    box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
-    background-color: var(--white);
-    padding: 5px;
+    margin-bottom: var(--spacing-md);
+    /* Subtle glow to separate logo from dark background */
+    filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.15));
+}
 }
 
 .hero-title {
