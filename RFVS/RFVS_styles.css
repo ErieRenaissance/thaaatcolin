@@ -246,7 +246,7 @@ body {
     align-items: center;
     justify-content: center;
     background-color: var(--navy-dark);
-    opacity: .75;
+    opacity: 1.0;
     position: relative;
     overflow: hidden;
     padding: var(--spacing-xs) 0;
