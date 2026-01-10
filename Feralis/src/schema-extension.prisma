@@ -1,0 +1,1775 @@
+// =============================================================================
+// FERALIS PLATFORM - PRISMA SCHEMA EXTENSION
+// =============================================================================
+// This file contains all missing models and enums identified in the analysis report
+// APPEND this content to the existing schema.prisma file
+// 
+// Missing Components Added:
+// - Phase 6/7 Enums (NcrStatus, FinishingStatus, BathStatus, etc.)
+// - Analytics Tables (ReportDefinition, KPIDefinition, Dashboard, etc.)
+// - Customer Portal Tables (PortalUser, RFQ, ApprovalRequest, etc.)
+// - Telemetry Tables (MachineTelemetry, TelemetryAggregate, etc.)
+// - Tooling Tables (Tool, ToolAssignment, ToolLife, etc.)
+// - Quote Advanced Analysis Tables (QuoteGeometryAnalysis, QuoteToolpath, etc.)
+// - Missing Relations and Indexes
+// =============================================================================
+
+// =============================================================================
+// PHASE 6 ENUMS - MISSING FROM ORIGINAL SCHEMA
+// =============================================================================
+
+enum NcrStatus {
+  OPEN
+  PENDING_REVIEW
+  PENDING_DISPOSITION
+  DISPOSITIONED
+  CLOSED
+  VOIDED
+
+  @@schema("public")
+}
+
+enum FinishingStatus {
+  PENDING
+  IN_PROCESS
+  COMPLETE
+  HOLD
+  CANCELLED
+
+  @@schema("public")
+}
+
+enum FinishingBatchStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETE
+  CANCELLED
+
+  @@schema("public")
+}
+
+enum BathStatus {
+  ACTIVE
+  MAINTENANCE
+  OUT_OF_SERVICE
+  DEPLETED
+
+  @@schema("public")
+}
+
+enum OspStatus {
+  PENDING
+  SHIPPED
+  AT_VENDOR
+  RECEIVED
+  INSPECTED
+
+  @@schema("public")
+}
+
+enum RmaStatus {
+  PENDING
+  AUTHORIZED
+  RECEIVED
+  INSPECTED
+  CLOSED
+
+  @@schema("public")
+}
+
+enum AnalyticsAlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+
+  @@schema("public")
+}
+
+enum ReportStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+  DISABLED
+
+  @@schema("public")
+}
+
+enum PortalUserStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+  LOCKED
+
+  @@schema("public")
+}
+
+enum PortalRole {
+  ADMIN
+  BUYER
+  ENGINEER
+  VIEWER
+
+  @@schema("public")
+}
+
+enum RfqStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  QUOTED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CANCELLED
+
+  @@schema("public")
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  DELEGATED
+  EXPIRED
+
+  @@schema("public")
+}
+
+enum MessageStatus {
+  UNREAD
+  READ
+  ARCHIVED
+
+  @@schema("public")
+}
+
+enum GeometryAnalysisStatus {
+  PENDING
+  PROCESSING
+  COMPLETE
+  FAILED
+
+  @@schema("public")
+}
+
+enum ToolStatus {
+  AVAILABLE
+  IN_USE
+  MAINTENANCE
+  WORN
+  RETIRED
+
+  @@schema("public")
+}
+
+enum ToolTransactionType {
+  CHECK_OUT
+  CHECK_IN
+  TRANSFER
+  ADJUSTMENT
+  SCRAP
+
+  @@schema("public")
+}
+
+// =============================================================================
+// ANALYTICS TABLES (Phase 7)
+// =============================================================================
+
+model ReportDefinition {
+  id                  String       @id @default(uuid()) @db.Uuid
+  organizationId      String       @map("organization_id") @db.Uuid
+  
+  // Basic Info
+  name                String       @db.VarChar(255)
+  code                String       @db.VarChar(50)
+  description         String?      @db.Text
+  category            String       @db.VarChar(100)
+  
+  // Report Configuration
+  reportType          String       @map("report_type") @db.VarChar(50) // STANDARD, CUSTOM, SCHEDULED
+  queryDefinition     Json         @map("query_definition")
+  parameters          Json         @default("[]")
+  columns             Json         @default("[]")
+  
+  // Formatting
+  outputFormats       String[]     @map("output_formats") @db.VarChar(20)
+  defaultFormat       String       @default("PDF") @map("default_format") @db.VarChar(20)
+  templateId          String?      @map("template_id") @db.Uuid
+  
+  // Scheduling
+  isScheduled         Boolean      @default(false) @map("is_scheduled")
+  scheduleConfig      Json?        @map("schedule_config")
+  
+  // Access Control
+  isPublic            Boolean      @default(false) @map("is_public")
+  allowedRoles        String[]     @map("allowed_roles") @db.VarChar(50)
+  
+  // Status
+  status              ReportStatus @default(DRAFT)
+  isActive            Boolean      @default(true) @map("is_active")
+  
+  // Audit
+  createdAt           DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  createdBy           String?      @map("created_by") @db.Uuid
+  updatedAt           DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+  updatedBy           String?      @map("updated_by") @db.Uuid
+
+  // Relations
+  organization        Organization @relation("ReportDefinitionOrganization", fields: [organizationId], references: [id])
+  executions          ReportExecution[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@index([category])
+  @@index([status])
+  @@map("report_definition")
+  @@schema("public")
+}
+
+model ReportExecution {
+  id                  String   @id @default(uuid()) @db.Uuid
+  organizationId      String   @map("organization_id") @db.Uuid
+  reportId            String   @map("report_id") @db.Uuid
+  
+  // Execution Details
+  executedBy          String   @map("executed_by") @db.Uuid
+  executedAt          DateTime @default(now()) @map("executed_at") @db.Timestamptz
+  
+  // Parameters Used
+  parameters          Json     @default("{}")
+  
+  // Results
+  status              String   @db.VarChar(20) // PENDING, RUNNING, COMPLETE, FAILED
+  outputFormat        String   @map("output_format") @db.VarChar(20)
+  outputUrl           String?  @map("output_url") @db.VarChar(500)
+  rowCount            Int?     @map("row_count")
+  executionTimeMs     Int?     @map("execution_time_ms")
+  errorMessage        String?  @map("error_message") @db.Text
+  
+  // Expiration
+  expiresAt           DateTime? @map("expires_at") @db.Timestamptz
+
+  // Relations
+  organization        Organization     @relation("ReportExecutionOrganization", fields: [organizationId], references: [id])
+  report              ReportDefinition @relation(fields: [reportId], references: [id])
+
+  @@index([organizationId])
+  @@index([reportId])
+  @@index([executedAt])
+  @@map("report_execution")
+  @@schema("public")
+}
+
+model KpiDefinition {
+  id                  String   @id @default(uuid()) @db.Uuid
+  organizationId      String   @map("organization_id") @db.Uuid
+  
+  // Basic Info
+  name                String   @db.VarChar(255)
+  code                String   @db.VarChar(50)
+  description         String?  @db.Text
+  category            String   @db.VarChar(100)
+  
+  // Calculation
+  calculationType     String   @map("calculation_type") @db.VarChar(50) // QUERY, FORMULA, AGGREGATE
+  calculation         Json     // Query or formula definition
+  unit                String?  @db.VarChar(50)
+  
+  // Targets
+  targetValue         Decimal? @map("target_value") @db.Decimal(15, 4)
+  warningThreshold    Decimal? @map("warning_threshold") @db.Decimal(15, 4)
+  criticalThreshold   Decimal? @map("critical_threshold") @db.Decimal(15, 4)
+  thresholdDirection  String   @default("ABOVE") @map("threshold_direction") @db.VarChar(10) // ABOVE, BELOW
+  
+  // Schedule
+  calculationInterval String   @default("HOURLY") @map("calculation_interval") @db.VarChar(20)
+  
+  // Display
+  displayFormat       String?  @map("display_format") @db.VarChar(50)
+  chartType           String?  @map("chart_type") @db.VarChar(50)
+  
+  // Status
+  isActive            Boolean  @default(true) @map("is_active")
+  
+  // Audit
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+  createdBy           String?  @map("created_by") @db.Uuid
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  organization        Organization @relation("KpiDefinitionOrganization", fields: [organizationId], references: [id])
+  values              KpiValue[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@index([category])
+  @@map("kpi_definition")
+  @@schema("public")
+}
+
+model KpiValue {
+  id                  String   @id @default(uuid()) @db.Uuid
+  kpiId               String   @map("kpi_id") @db.Uuid
+  
+  // Value
+  calculatedAt        DateTime @map("calculated_at") @db.Timestamptz
+  value               Decimal  @db.Decimal(15, 4)
+  
+  // Context
+  periodStart         DateTime @map("period_start") @db.Timestamptz
+  periodEnd           DateTime @map("period_end") @db.Timestamptz
+  
+  // Breakdown (optional)
+  dimensions          Json?    // For drill-down capability
+  
+  // Status
+  status              String   @db.VarChar(20) // NORMAL, WARNING, CRITICAL
+
+  // Relations
+  kpi                 KpiDefinition @relation(fields: [kpiId], references: [id], onDelete: Cascade)
+
+  @@index([kpiId])
+  @@index([calculatedAt])
+  @@index([kpiId, calculatedAt])
+  @@map("kpi_value")
+  @@schema("public")
+}
+
+model Dashboard {
+  id                  String   @id @default(uuid()) @db.Uuid
+  organizationId      String   @map("organization_id") @db.Uuid
+  
+  // Basic Info
+  name                String   @db.VarChar(255)
+  code                String   @db.VarChar(50)
+  description         String?  @db.Text
+  
+  // Layout
+  layout              Json     @default("{}") // Grid layout configuration
+  theme               String   @default("DEFAULT") @db.VarChar(50)
+  
+  // Access Control
+  isPublic            Boolean  @default(false) @map("is_public")
+  isDefault           Boolean  @default(false) @map("is_default")
+  allowedRoles        String[] @map("allowed_roles") @db.VarChar(50)
+  ownerId             String?  @map("owner_id") @db.Uuid
+  
+  // Refresh
+  autoRefreshSeconds  Int      @default(300) @map("auto_refresh_seconds")
+  
+  // Status
+  isActive            Boolean  @default(true) @map("is_active")
+  
+  // Audit
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+  createdBy           String?  @map("created_by") @db.Uuid
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  organization        Organization     @relation("DashboardOrganization", fields: [organizationId], references: [id])
+  widgets             DashboardWidget[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@index([ownerId])
+  @@map("dashboard")
+  @@schema("public")
+}
+
+model DashboardWidget {
+  id                  String   @id @default(uuid()) @db.Uuid
+  dashboardId         String   @map("dashboard_id") @db.Uuid
+  
+  // Position
+  positionX           Int      @map("position_x")
+  positionY           Int      @map("position_y")
+  width               Int
+  height              Int
+  
+  // Widget Type
+  widgetType          String   @map("widget_type") @db.VarChar(50) // KPI, CHART, TABLE, MAP, etc.
+  title               String?  @db.VarChar(255)
+  
+  // Configuration
+  config              Json     @default("{}")
+  
+  // Data Source
+  dataSourceType      String   @map("data_source_type") @db.VarChar(50) // KPI, REPORT, QUERY
+  dataSourceId        String?  @map("data_source_id") @db.Uuid
+  customQuery         Json?    @map("custom_query")
+  
+  // Status
+  isActive            Boolean  @default(true) @map("is_active")
+  
+  // Audit
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  dashboard           Dashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+
+  @@index([dashboardId])
+  @@map("dashboard_widget")
+  @@schema("public")
+}
+
+model AnalyticsAlert {
+  id                  String                 @id @default(uuid()) @db.Uuid
+  organizationId      String                 @map("organization_id") @db.Uuid
+  
+  // Basic Info
+  name                String                 @db.VarChar(255)
+  description         String?                @db.Text
+  
+  // Trigger Configuration
+  triggerType         String                 @map("trigger_type") @db.VarChar(50) // KPI_THRESHOLD, QUERY_CONDITION, SCHEDULE
+  triggerConfig       Json                   @map("trigger_config")
+  
+  // Alert Details
+  severity            AnalyticsAlertSeverity @default(INFO)
+  messageTemplate     String                 @map("message_template") @db.Text
+  
+  // Routing
+  notificationChannels String[]              @map("notification_channels") @db.VarChar(50)
+  recipients          Json                   @default("[]") // User IDs or role names
+  
+  // Escalation
+  escalationConfig    Json?                  @map("escalation_config")
+  
+  // Status
+  isActive            Boolean                @default(true) @map("is_active")
+  
+  // Audit
+  createdAt           DateTime               @default(now()) @map("created_at") @db.Timestamptz
+  createdBy           String?                @map("created_by") @db.Uuid
+  updatedAt           DateTime               @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  organization        Organization           @relation("AnalyticsAlertOrganization", fields: [organizationId], references: [id])
+  instances           AlertInstance[]
+
+  @@index([organizationId])
+  @@index([severity])
+  @@map("analytics_alert")
+  @@schema("public")
+}
+
+model AlertInstance {
+  id                  String   @id @default(uuid()) @db.Uuid
+  alertId             String   @map("alert_id") @db.Uuid
+  
+  // Trigger
+  triggeredAt         DateTime @map("triggered_at") @db.Timestamptz
+  triggerValue        Json?    @map("trigger_value")
+  
+  // Message
+  message             String   @db.Text
+  
+  // Status
+  status              String   @db.VarChar(20) // ACTIVE, ACKNOWLEDGED, RESOLVED, ESCALATED
+  acknowledgedBy      String?  @map("acknowledged_by") @db.Uuid
+  acknowledgedAt      DateTime? @map("acknowledged_at") @db.Timestamptz
+  resolvedBy          String?  @map("resolved_by") @db.Uuid
+  resolvedAt          DateTime? @map("resolved_at") @db.Timestamptz
+  resolutionNotes     String?  @map("resolution_notes") @db.Text
+
+  // Relations
+  alert               AnalyticsAlert @relation(fields: [alertId], references: [id], onDelete: Cascade)
+
+  @@index([alertId])
+  @@index([triggeredAt])
+  @@index([status])
+  @@map("alert_instance")
+  @@schema("public")
+}
+
+model DailyProductionSummary {
+  id                  String   @id @default(uuid()) @db.Uuid
+  organizationId      String   @map("organization_id") @db.Uuid
+  facilityId          String?  @map("facility_id") @db.Uuid
+  
+  // Date
+  summaryDate         DateTime @map("summary_date") @db.Date
+  
+  // Production Metrics
+  totalPartsProduced  Int      @map("total_parts_produced")
+  totalOrdersShipped  Int      @map("total_orders_shipped")
+  totalRevenueEarned  Decimal  @map("total_revenue_earned") @db.Decimal(15, 2)
+  
+  // Machine Metrics
+  totalMachineHours   Decimal  @map("total_machine_hours") @db.Decimal(10, 2)
+  totalIdleHours      Decimal  @map("total_idle_hours") @db.Decimal(10, 2)
+  avgOee              Decimal  @map("avg_oee") @db.Decimal(5, 2)
+  
+  // Quality Metrics
+  totalInspections    Int      @map("total_inspections")
+  passRate            Decimal  @map("pass_rate") @db.Decimal(5, 2)
+  ncrCount            Int      @map("ncr_count")
+  
+  // Labor Metrics
+  totalLaborHours     Decimal  @map("total_labor_hours") @db.Decimal(10, 2)
+  
+  // Detail Breakdown
+  byWorkCenter        Json     @map("by_work_center") @default("{}")
+  byMachine           Json     @map("by_machine") @default("{}")
+  byShift             Json     @map("by_shift") @default("{}")
+  
+  // Audit
+  calculatedAt        DateTime @map("calculated_at") @db.Timestamptz
+
+  @@unique([organizationId, facilityId, summaryDate])
+  @@index([organizationId])
+  @@index([summaryDate])
+  @@map("daily_production_summary")
+  @@schema("public")
+}
+
+model CustomerPerformanceSummary {
+  id                  String   @id @default(uuid()) @db.Uuid
+  organizationId      String   @map("organization_id") @db.Uuid
+  customerId          String   @map("customer_id") @db.Uuid
+  
+  // Period
+  periodStart         DateTime @map("period_start") @db.Date
+  periodEnd           DateTime @map("period_end") @db.Date
+  
+  // Order Metrics
+  totalOrders         Int      @map("total_orders")
+  totalRevenue        Decimal  @map("total_revenue") @db.Decimal(15, 2)
+  avgOrderValue       Decimal  @map("avg_order_value") @db.Decimal(15, 2)
+  
+  // Delivery Metrics
+  onTimeDeliveryRate  Decimal  @map("on_time_delivery_rate") @db.Decimal(5, 2)
+  avgLeadTimeDays     Decimal  @map("avg_lead_time_days") @db.Decimal(6, 2)
+  
+  // Quality Metrics
+  qualityRejectRate   Decimal  @map("quality_reject_rate") @db.Decimal(5, 4)
+  rmaCount            Int      @map("rma_count")
+  
+  // Quote Metrics
+  totalQuotes         Int      @map("total_quotes")
+  quoteConversionRate Decimal  @map("quote_conversion_rate") @db.Decimal(5, 2)
+  
+  // Audit
+  calculatedAt        DateTime @map("calculated_at") @db.Timestamptz
+
+  // Relations
+  customer            Customer @relation("CustomerPerformanceSummaryCustomer", fields: [customerId], references: [id])
+
+  @@unique([organizationId, customerId, periodStart, periodEnd])
+  @@index([organizationId])
+  @@index([customerId])
+  @@map("customer_performance_summary")
+  @@schema("public")
+}
+
+// =============================================================================
+// CUSTOMER PORTAL TABLES (Phase 7)
+// =============================================================================
+
+model CustomerPortalConfig {
+  id                  String   @id @default(uuid()) @db.Uuid
+  organizationId      String   @map("organization_id") @db.Uuid
+  customerId          String   @map("customer_id") @db.Uuid
+  
+  // Portal Settings
+  isEnabled           Boolean  @default(true) @map("is_enabled")
+  
+  // Feature Toggles
+  allowQuoteRequests  Boolean  @default(true) @map("allow_quote_requests")
+  allowOrderPlacement Boolean  @default(false) @map("allow_order_placement")
+  allowDocumentDownload Boolean @default(true) @map("allow_document_download")
+  allowMessaging      Boolean  @default(true) @map("allow_messaging")
+  
+  // Display Settings
+  showPricing         Boolean  @default(true) @map("show_pricing")
+  showLeadTimes       Boolean  @default(true) @map("show_lead_times")
+  showInventory       Boolean  @default(false) @map("show_inventory")
+  
+  // Approval Settings
+  requireApprovalAbove Decimal? @map("require_approval_above") @db.Decimal(12, 2)
+  
+  // Branding
+  customLogo          String?  @map("custom_logo") @db.VarChar(500)
+  customTheme         Json?    @map("custom_theme")
+  
+  // Audit
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  customer            Customer @relation("CustomerPortalConfigCustomer", fields: [customerId], references: [id])
+
+  @@unique([organizationId, customerId])
+  @@index([customerId])
+  @@map("customer_portal_config")
+  @@schema("public")
+}
+
+model PortalUser {
+  id                  String           @id @default(uuid()) @db.Uuid
+  organizationId      String           @map("organization_id") @db.Uuid
+  customerId          String           @map("customer_id") @db.Uuid
+  
+  // Basic Info
+  email               String           @db.VarChar(255)
+  passwordHash        String           @map("password_hash") @db.VarChar(255)
+  firstName           String           @map("first_name") @db.VarChar(100)
+  lastName            String           @map("last_name") @db.VarChar(100)
+  phone               String?          @db.VarChar(50)
+  
+  // Role & Access
+  role                PortalRole       @default(VIEWER)
+  permissions         Json             @default("[]")
+  
+  // Status
+  status              PortalUserStatus @default(PENDING)
+  emailVerified       Boolean          @default(false) @map("email_verified")
+  emailVerifiedAt     DateTime?        @map("email_verified_at") @db.Timestamptz
+  
+  // Security
+  lastLoginAt         DateTime?        @map("last_login_at") @db.Timestamptz
+  lastLoginIp         String?          @map("last_login_ip") @db.VarChar(45)
+  failedLoginAttempts Int              @default(0) @map("failed_login_attempts")
+  lockedUntil         DateTime?        @map("locked_until") @db.Timestamptz
+  
+  // Password Reset
+  resetToken          String?          @map("reset_token") @db.VarChar(255)
+  resetTokenExpires   DateTime?        @map("reset_token_expires") @db.Timestamptz
+  
+  // Preferences
+  preferences         Json             @default("{}")
+  
+  // Audit
+  createdAt           DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  createdBy           String?          @map("created_by") @db.Uuid
+  updatedAt           DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  customer            Customer         @relation("PortalUserCustomer", fields: [customerId], references: [id])
+  sessions            PortalSession[]
+  rfqs                Rfq[]
+  approvalRequests    ApprovalRequest[] @relation("ApprovalRequestUser")
+  sentMessages        Message[]        @relation("MessageSender")
+  notifications       PortalNotification[]
+  activityLogs        PortalActivityLog[]
+
+  @@unique([organizationId, email])
+  @@index([customerId])
+  @@index([email])
+  @@map("portal_user")
+  @@schema("public")
+}
+
+model PortalSession {
+  id                  String   @id @default(uuid()) @db.Uuid
+  portalUserId        String   @map("portal_user_id") @db.Uuid
+  
+  // Session Info
+  token               String   @unique @db.VarChar(500)
+  refreshToken        String?  @map("refresh_token") @db.VarChar(500)
+  
+  // Device Info
+  userAgent           String?  @map("user_agent") @db.VarChar(500)
+  ipAddress           String?  @map("ip_address") @db.VarChar(45)
+  deviceType          String?  @map("device_type") @db.VarChar(50)
+  
+  // Validity
+  expiresAt           DateTime @map("expires_at") @db.Timestamptz
+  isActive            Boolean  @default(true) @map("is_active")
+  
+  // Audit
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+  lastActivityAt      DateTime @default(now()) @map("last_activity_at") @db.Timestamptz
+
+  // Relations
+  portalUser          PortalUser @relation(fields: [portalUserId], references: [id], onDelete: Cascade)
+
+  @@index([portalUserId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("portal_session")
+  @@schema("public")
+}
+
+model Rfq {
+  id                  String    @id @default(uuid()) @db.Uuid
+  organizationId      String    @map("organization_id") @db.Uuid
+  customerId          String    @map("customer_id") @db.Uuid
+  portalUserId        String    @map("portal_user_id") @db.Uuid
+  
+  // RFQ Number
+  rfqNumber           String    @map("rfq_number") @db.VarChar(50)
+  
+  // Status
+  status              RfqStatus @default(DRAFT)
+  
+  // Details
+  title               String    @db.VarChar(255)
+  description         String?   @db.Text
+  
+  // Requirements
+  requestedDeliveryDate DateTime? @map("requested_delivery_date") @db.Date
+  paymentTerms        String?   @map("payment_terms") @db.VarChar(50)
+  specialInstructions String?   @map("special_instructions") @db.Text
+  
+  // Attachments
+  attachments         Json      @default("[]")
+  
+  // Response
+  quoteId             String?   @map("quote_id") @db.Uuid
+  respondedAt         DateTime? @map("responded_at") @db.Timestamptz
+  respondedBy         String?   @map("responded_by") @db.Uuid
+  
+  // Audit
+  submittedAt         DateTime? @map("submitted_at") @db.Timestamptz
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  customer            Customer    @relation("RfqCustomer", fields: [customerId], references: [id])
+  portalUser          PortalUser  @relation(fields: [portalUserId], references: [id])
+  lines               RfqLine[]
+  quote               Quote?      @relation("RfqQuote", fields: [quoteId], references: [id])
+
+  @@unique([organizationId, rfqNumber])
+  @@index([customerId])
+  @@index([status])
+  @@map("rfq")
+  @@schema("public")
+}
+
+model RfqLine {
+  id                  String   @id @default(uuid()) @db.Uuid
+  rfqId               String   @map("rfq_id") @db.Uuid
+  
+  // Line Number
+  lineNumber          Int      @map("line_number")
+  
+  // Part Info
+  partId              String?  @map("part_id") @db.Uuid
+  customerPartNumber  String?  @map("customer_part_number") @db.VarChar(100)
+  partDescription     String?  @map("part_description") @db.Text
+  
+  // Quantity
+  quantity            Int
+  unitOfMeasure       String   @default("EACH") @map("unit_of_measure") @db.VarChar(20)
+  
+  // Specifications
+  materialSpec        String?  @map("material_spec") @db.VarChar(100)
+  finishSpec          String?  @map("finish_spec") @db.VarChar(100)
+  
+  // Attachments
+  drawingUrl          String?  @map("drawing_url") @db.VarChar(500)
+  cadFileUrl          String?  @map("cad_file_url") @db.VarChar(500)
+  
+  // Notes
+  notes               String?  @db.Text
+
+  // Relations
+  rfq                 Rfq      @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  part                Part?    @relation("RfqLinePart", fields: [partId], references: [id])
+
+  @@unique([rfqId, lineNumber])
+  @@index([rfqId])
+  @@map("rfq_line")
+  @@schema("public")
+}
+
+model ApprovalRequest {
+  id                  String         @id @default(uuid()) @db.Uuid
+  organizationId      String         @map("organization_id") @db.Uuid
+  customerId          String         @map("customer_id") @db.Uuid
+  
+  // Request Info
+  requestType         String         @map("request_type") @db.VarChar(50) // ORDER, QUOTE, CHANGE
+  entityType          String         @map("entity_type") @db.VarChar(50) // Order, Quote
+  entityId            String         @map("entity_id") @db.Uuid
+  
+  // Requester
+  requestedBy         String         @map("requested_by") @db.Uuid
+  requestedAt         DateTime       @default(now()) @map("requested_at") @db.Timestamptz
+  
+  // Details
+  title               String         @db.VarChar(255)
+  description         String?        @db.Text
+  amount              Decimal?       @db.Decimal(15, 2)
+  
+  // Status
+  status              ApprovalStatus @default(PENDING)
+  
+  // Response
+  decidedBy           String?        @map("decided_by") @db.Uuid
+  decidedAt           DateTime?      @map("decided_at") @db.Timestamptz
+  decisionNotes       String?        @map("decision_notes") @db.Text
+  
+  // Delegation
+  delegatedTo         String?        @map("delegated_to") @db.Uuid
+  delegatedAt         DateTime?      @map("delegated_at") @db.Timestamptz
+  
+  // Expiration
+  expiresAt           DateTime?      @map("expires_at") @db.Timestamptz
+
+  // Relations
+  customer            Customer       @relation("ApprovalRequestCustomer", fields: [customerId], references: [id])
+  requester           PortalUser     @relation("ApprovalRequestUser", fields: [requestedBy], references: [id])
+  history             ApprovalHistory[]
+
+  @@index([organizationId])
+  @@index([customerId])
+  @@index([status])
+  @@index([entityType, entityId])
+  @@map("approval_request")
+  @@schema("public")
+}
+
+model ApprovalHistory {
+  id                  String   @id @default(uuid()) @db.Uuid
+  approvalRequestId   String   @map("approval_request_id") @db.Uuid
+  
+  // Action
+  action              String   @db.VarChar(50) // CREATED, APPROVED, REJECTED, DELEGATED, EXPIRED
+  performedBy         String   @map("performed_by") @db.Uuid
+  performedAt         DateTime @default(now()) @map("performed_at") @db.Timestamptz
+  
+  // Details
+  notes               String?  @db.Text
+  metadata            Json?
+
+  // Relations
+  approvalRequest     ApprovalRequest @relation(fields: [approvalRequestId], references: [id], onDelete: Cascade)
+
+  @@index([approvalRequestId])
+  @@map("approval_history")
+  @@schema("public")
+}
+
+model MessageThread {
+  id                  String   @id @default(uuid()) @db.Uuid
+  organizationId      String   @map("organization_id") @db.Uuid
+  customerId          String   @map("customer_id") @db.Uuid
+  
+  // Thread Info
+  subject             String   @db.VarChar(255)
+  
+  // Context
+  contextType         String?  @map("context_type") @db.VarChar(50) // ORDER, QUOTE, RFQ
+  contextId           String?  @map("context_id") @db.Uuid
+  
+  // Status
+  isOpen              Boolean  @default(true) @map("is_open")
+  lastMessageAt       DateTime @default(now()) @map("last_message_at") @db.Timestamptz
+  
+  // Audit
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+  createdBy           String   @map("created_by") @db.Uuid
+
+  // Relations
+  customer            Customer  @relation("MessageThreadCustomer", fields: [customerId], references: [id])
+  messages            Message[]
+
+  @@index([organizationId])
+  @@index([customerId])
+  @@index([contextType, contextId])
+  @@map("message_thread")
+  @@schema("public")
+}
+
+model Message {
+  id                  String        @id @default(uuid()) @db.Uuid
+  threadId            String        @map("thread_id") @db.Uuid
+  
+  // Sender
+  senderType          String        @map("sender_type") @db.VarChar(20) // PORTAL_USER, INTERNAL_USER
+  senderPortalUserId  String?       @map("sender_portal_user_id") @db.Uuid
+  senderInternalUserId String?      @map("sender_internal_user_id") @db.Uuid
+  
+  // Content
+  content             String        @db.Text
+  attachments         Json          @default("[]")
+  
+  // Status
+  status              MessageStatus @default(UNREAD)
+  readAt              DateTime?     @map("read_at") @db.Timestamptz
+  
+  // Audit
+  createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  thread              MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  senderPortalUser    PortalUser?   @relation("MessageSender", fields: [senderPortalUserId], references: [id])
+
+  @@index([threadId])
+  @@index([createdAt])
+  @@map("message")
+  @@schema("public")
+}
+
+model PortalNotification {
+  id                  String   @id @default(uuid()) @db.Uuid
+  portalUserId        String   @map("portal_user_id") @db.Uuid
+  
+  // Notification
+  type                String   @db.VarChar(50) // ORDER_STATUS, QUOTE_READY, MESSAGE, etc.
+  title               String   @db.VarChar(255)
+  message             String   @db.Text
+  
+  // Context
+  entityType          String?  @map("entity_type") @db.VarChar(50)
+  entityId            String?  @map("entity_id") @db.Uuid
+  actionUrl           String?  @map("action_url") @db.VarChar(500)
+  
+  // Status
+  isRead              Boolean  @default(false) @map("is_read")
+  readAt              DateTime? @map("read_at") @db.Timestamptz
+  
+  // Audit
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  portalUser          PortalUser @relation(fields: [portalUserId], references: [id], onDelete: Cascade)
+
+  @@index([portalUserId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("portal_notification")
+  @@schema("public")
+}
+
+model PortalActivityLog {
+  id                  String   @id @default(uuid()) @db.Uuid
+  portalUserId        String   @map("portal_user_id") @db.Uuid
+  
+  // Activity
+  action              String   @db.VarChar(100)
+  entityType          String?  @map("entity_type") @db.VarChar(50)
+  entityId            String?  @map("entity_id") @db.Uuid
+  
+  // Details
+  details             Json?
+  
+  // Request Info
+  ipAddress           String?  @map("ip_address") @db.VarChar(45)
+  userAgent           String?  @map("user_agent") @db.VarChar(500)
+  
+  // Audit
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  portalUser          PortalUser @relation(fields: [portalUserId], references: [id], onDelete: Cascade)
+
+  @@index([portalUserId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("portal_activity_log")
+  @@schema("public")
+}
+
+model DocumentAccessLog {
+  id                  String   @id @default(uuid()) @db.Uuid
+  organizationId      String   @map("organization_id") @db.Uuid
+  
+  // Document
+  documentType        String   @map("document_type") @db.VarChar(50)
+  documentId          String   @map("document_id") @db.Uuid
+  documentName        String   @map("document_name") @db.VarChar(255)
+  
+  // Accessor
+  accessorType        String   @map("accessor_type") @db.VarChar(20) // PORTAL_USER, INTERNAL_USER
+  portalUserId        String?  @map("portal_user_id") @db.Uuid
+  internalUserId      String?  @map("internal_user_id") @db.Uuid
+  
+  // Access Info
+  accessType          String   @map("access_type") @db.VarChar(20) // VIEW, DOWNLOAD
+  ipAddress           String?  @map("ip_address") @db.VarChar(45)
+  
+  // Audit
+  accessedAt          DateTime @default(now()) @map("accessed_at") @db.Timestamptz
+
+  @@index([organizationId])
+  @@index([documentType, documentId])
+  @@index([accessedAt])
+  @@map("document_access_log")
+  @@schema("public")
+}
+
+// =============================================================================
+// TELEMETRY TABLES (Phase 6/7)
+// NOTE: machine_telemetry should be converted to a TimescaleDB hypertable after migration
+// =============================================================================
+
+model MachineTelemetry {
+  id                  String   @id @default(uuid()) @db.Uuid
+  machineId           String   @map("machine_id") @db.Uuid
+  
+  // Timestamp (primary time column for hypertable)
+  timestamp           DateTime @db.Timestamptz
+  
+  // Core Metrics
+  spindleSpeed        Decimal? @map("spindle_speed") @db.Decimal(10, 2)
+  spindleLoad         Decimal? @map("spindle_load") @db.Decimal(5, 2)
+  feedRate            Decimal? @map("feed_rate") @db.Decimal(10, 2)
+  feedOverride        Decimal? @map("feed_override") @db.Decimal(5, 2)
+  
+  // Axis Positions
+  xPosition           Decimal? @map("x_position") @db.Decimal(12, 6)
+  yPosition           Decimal? @map("y_position") @db.Decimal(12, 6)
+  zPosition           Decimal? @map("z_position") @db.Decimal(12, 6)
+  aPosition           Decimal? @map("a_position") @db.Decimal(12, 6)
+  bPosition           Decimal? @map("b_position") @db.Decimal(12, 6)
+  cPosition           Decimal? @map("c_position") @db.Decimal(12, 6)
+  
+  // Temperature
+  spindleTemp         Decimal? @map("spindle_temp") @db.Decimal(6, 2)
+  coolantTemp         Decimal? @map("coolant_temp") @db.Decimal(6, 2)
+  ambientTemp         Decimal? @map("ambient_temp") @db.Decimal(6, 2)
+  
+  // Power
+  powerConsumption    Decimal? @map("power_consumption") @db.Decimal(10, 2)
+  
+  // Status
+  executionState      String?  @map("execution_state") @db.VarChar(50)
+  programName         String?  @map("program_name") @db.VarChar(255)
+  currentTool         String?  @map("current_tool") @db.VarChar(50)
+  partCount           Int?     @map("part_count")
+  
+  // Alarms
+  activeAlarms        Json?    @map("active_alarms")
+  
+  // Raw Data
+  rawData             Json?    @map("raw_data")
+
+  // Relations
+  machine             Machine  @relation("MachineTelemetry", fields: [machineId], references: [id])
+
+  @@index([machineId])
+  @@index([timestamp])
+  @@index([machineId, timestamp])
+  @@map("machine_telemetry")
+  @@schema("public")
+}
+
+model TelemetryAggregate1h {
+  id                  String   @id @default(uuid()) @db.Uuid
+  machineId           String   @map("machine_id") @db.Uuid
+  
+  // Time Bucket
+  bucketStart         DateTime @map("bucket_start") @db.Timestamptz
+  
+  // Aggregated Metrics
+  avgSpindleSpeed     Decimal? @map("avg_spindle_speed") @db.Decimal(10, 2)
+  maxSpindleSpeed     Decimal? @map("max_spindle_speed") @db.Decimal(10, 2)
+  avgSpindleLoad      Decimal? @map("avg_spindle_load") @db.Decimal(5, 2)
+  maxSpindleLoad      Decimal? @map("max_spindle_load") @db.Decimal(5, 2)
+  avgFeedRate         Decimal? @map("avg_feed_rate") @db.Decimal(10, 2)
+  
+  // Temperature
+  avgSpindleTemp      Decimal? @map("avg_spindle_temp") @db.Decimal(6, 2)
+  maxSpindleTemp      Decimal? @map("max_spindle_temp") @db.Decimal(6, 2)
+  
+  // Power
+  totalPowerKwh       Decimal? @map("total_power_kwh") @db.Decimal(10, 2)
+  avgPowerKw          Decimal? @map("avg_power_kw") @db.Decimal(10, 2)
+  
+  // Utilization
+  runningMinutes      Int      @map("running_minutes")
+  idleMinutes         Int      @map("idle_minutes")
+  alarmMinutes        Int      @map("alarm_minutes")
+  
+  // Parts
+  partsProduced       Int      @map("parts_produced")
+
+  // Relations
+  machine             Machine  @relation("TelemetryAggregate1h", fields: [machineId], references: [id])
+
+  @@unique([machineId, bucketStart])
+  @@index([machineId])
+  @@index([bucketStart])
+  @@map("telemetry_aggregate_1h")
+  @@schema("public")
+}
+
+model TelemetryAggregate1d {
+  id                  String   @id @default(uuid()) @db.Uuid
+  machineId           String   @map("machine_id") @db.Uuid
+  
+  // Time Bucket
+  bucketDate          DateTime @map("bucket_date") @db.Date
+  
+  // Aggregated Metrics (same structure as 1h)
+  avgSpindleSpeed     Decimal? @map("avg_spindle_speed") @db.Decimal(10, 2)
+  maxSpindleSpeed     Decimal? @map("max_spindle_speed") @db.Decimal(10, 2)
+  avgSpindleLoad      Decimal? @map("avg_spindle_load") @db.Decimal(5, 2)
+  maxSpindleLoad      Decimal? @map("max_spindle_load") @db.Decimal(5, 2)
+  avgFeedRate         Decimal? @map("avg_feed_rate") @db.Decimal(10, 2)
+  
+  // Temperature
+  avgSpindleTemp      Decimal? @map("avg_spindle_temp") @db.Decimal(6, 2)
+  maxSpindleTemp      Decimal? @map("max_spindle_temp") @db.Decimal(6, 2)
+  
+  // Power
+  totalPowerKwh       Decimal? @map("total_power_kwh") @db.Decimal(10, 2)
+  avgPowerKw          Decimal? @map("avg_power_kw") @db.Decimal(10, 2)
+  
+  // Utilization
+  runningMinutes      Int      @map("running_minutes")
+  idleMinutes         Int      @map("idle_minutes")
+  alarmMinutes        Int      @map("alarm_minutes")
+  
+  // OEE
+  availability        Decimal? @db.Decimal(5, 2)
+  performance         Decimal? @db.Decimal(5, 2)
+  quality             Decimal? @db.Decimal(5, 2)
+  oee                 Decimal? @db.Decimal(5, 2)
+  
+  // Parts
+  partsProduced       Int      @map("parts_produced")
+  partsRejected       Int      @map("parts_rejected")
+
+  // Relations
+  machine             Machine  @relation("TelemetryAggregate1d", fields: [machineId], references: [id])
+
+  @@unique([machineId, bucketDate])
+  @@index([machineId])
+  @@index([bucketDate])
+  @@map("telemetry_aggregate_1d")
+  @@schema("public")
+}
+
+model TelemetryAdapterConfig {
+  id                  String   @id @default(uuid()) @db.Uuid
+  machineId           String   @map("machine_id") @db.Uuid
+  
+  // Adapter Type
+  adapterType         String   @map("adapter_type") @db.VarChar(50) // MTCONNECT, OPC_UA, MODBUS, CUSTOM
+  
+  // Connection
+  connectionUrl       String   @map("connection_url") @db.VarChar(500)
+  port                Int?
+  credentials         Json?    // Encrypted
+  
+  // Configuration
+  pollingIntervalMs   Int      @default(1000) @map("polling_interval_ms")
+  dataItems           Json     @map("data_items") @default("[]")
+  transformations     Json?
+  
+  // Status
+  isEnabled           Boolean  @default(true) @map("is_enabled")
+  lastConnectedAt     DateTime? @map("last_connected_at") @db.Timestamptz
+  connectionStatus    String   @default("DISCONNECTED") @map("connection_status") @db.VarChar(20)
+  lastError           String?  @map("last_error") @db.Text
+  
+  // Audit
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  machine             Machine  @relation("TelemetryAdapterConfig", fields: [machineId], references: [id])
+
+  @@unique([machineId])
+  @@map("telemetry_adapter_config")
+  @@schema("public")
+}
+
+model TelemetryDataItem {
+  id                  String   @id @default(uuid()) @db.Uuid
+  adapterId           String   @map("adapter_id") @db.Uuid
+  
+  // Data Item
+  name                String   @db.VarChar(100)
+  path                String   @db.VarChar(500)
+  dataType            String   @map("data_type") @db.VarChar(50)
+  unit                String?  @db.VarChar(50)
+  
+  // Mapping
+  targetField         String?  @map("target_field") @db.VarChar(100)
+  transformation      Json?
+  
+  // Thresholds
+  warningMin          Decimal? @map("warning_min") @db.Decimal(15, 6)
+  warningMax          Decimal? @map("warning_max") @db.Decimal(15, 6)
+  criticalMin         Decimal? @map("critical_min") @db.Decimal(15, 6)
+  criticalMax         Decimal? @map("critical_max") @db.Decimal(15, 6)
+  
+  // Status
+  isEnabled           Boolean  @default(true) @map("is_enabled")
+
+  @@index([adapterId])
+  @@map("telemetry_data_item")
+  @@schema("public")
+}
+
+// =============================================================================
+// TOOLING TABLES (Phase 6/7)
+// =============================================================================
+
+model Tool {
+  id                  String     @id @default(uuid()) @db.Uuid
+  organizationId      String     @map("organization_id") @db.Uuid
+  
+  // Basic Info
+  toolNumber          String     @map("tool_number") @db.VarChar(50)
+  name                String     @db.VarChar(255)
+  description         String?    @db.Text
+  
+  // Classification
+  toolType            String     @map("tool_type") @db.VarChar(50) // END_MILL, DRILL, TAP, INSERT, etc.
+  category            String?    @db.VarChar(100)
+  
+  // Specifications
+  diameter            Decimal?   @db.Decimal(10, 4)
+  length              Decimal?   @db.Decimal(10, 4)
+  fluteCount          Int?       @map("flute_count")
+  material            String?    @db.VarChar(50)
+  coating             String?    @db.VarChar(50)
+  
+  // Manufacturer
+  manufacturer        String?    @db.VarChar(100)
+  manufacturerPartNo  String?    @map("manufacturer_part_no") @db.VarChar(100)
+  
+  // Cost
+  unitCost            Decimal?   @map("unit_cost") @db.Decimal(12, 4)
+  
+  // Tool Life
+  ratedLifeMinutes    Int?       @map("rated_life_minutes")
+  ratedLifeParts      Int?       @map("rated_life_parts")
+  
+  // Inventory
+  quantityOnHand      Int        @default(0) @map("quantity_on_hand")
+  reorderPoint        Int?       @map("reorder_point")
+  reorderQuantity     Int?       @map("reorder_quantity")
+  
+  // Location
+  defaultLocationId   String?    @map("default_location_id") @db.Uuid
+  
+  // Status
+  status              ToolStatus @default(AVAILABLE)
+  isActive            Boolean    @default(true) @map("is_active")
+  
+  // Audit
+  createdAt           DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  createdBy           String?    @map("created_by") @db.Uuid
+  updatedAt           DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  organization        Organization     @relation("ToolOrganization", fields: [organizationId], references: [id])
+  assignments         ToolAssignment[]
+  presets             ToolPreset[]
+  lifeRecords         ToolLife[]
+  transactions        ToolTransaction[]
+
+  @@unique([organizationId, toolNumber])
+  @@index([organizationId])
+  @@index([toolType])
+  @@map("tool")
+  @@schema("public")
+}
+
+model ToolAssignment {
+  id                  String   @id @default(uuid()) @db.Uuid
+  toolId              String   @map("tool_id") @db.Uuid
+  machineId           String   @map("machine_id") @db.Uuid
+  
+  // Assignment
+  pocketNumber        Int      @map("pocket_number")
+  assignedAt          DateTime @default(now()) @map("assigned_at") @db.Timestamptz
+  assignedBy          String?  @map("assigned_by") @db.Uuid
+  
+  // Tool Offset
+  lengthOffset        Decimal? @map("length_offset") @db.Decimal(10, 6)
+  diameterOffset      Decimal? @map("diameter_offset") @db.Decimal(10, 6)
+  wearOffset          Decimal? @map("wear_offset") @db.Decimal(10, 6)
+  
+  // Usage Tracking
+  currentLifeUsed     Int      @default(0) @map("current_life_used")
+  currentPartsCount   Int      @default(0) @map("current_parts_count")
+  lastUsedAt          DateTime? @map("last_used_at") @db.Timestamptz
+  
+  // Status
+  isActive            Boolean  @default(true) @map("is_active")
+  
+  // Audit
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  tool                Tool     @relation(fields: [toolId], references: [id])
+  machine             Machine  @relation("ToolAssignmentMachine", fields: [machineId], references: [id])
+
+  @@unique([machineId, pocketNumber])
+  @@index([toolId])
+  @@index([machineId])
+  @@map("tool_assignment")
+  @@schema("public")
+}
+
+model ToolPreset {
+  id                  String   @id @default(uuid()) @db.Uuid
+  toolId              String   @map("tool_id") @db.Uuid
+  
+  // Preset Info
+  presetName          String   @map("preset_name") @db.VarChar(100)
+  
+  // Measurements
+  measuredLength      Decimal  @map("measured_length") @db.Decimal(10, 6)
+  measuredDiameter    Decimal? @map("measured_diameter") @db.Decimal(10, 6)
+  
+  // Offsets
+  lengthOffset        Decimal  @map("length_offset") @db.Decimal(10, 6)
+  diameterOffset      Decimal? @map("diameter_offset") @db.Decimal(10, 6)
+  
+  // Presetter Info
+  presetterId         String?  @map("presetter_id") @db.VarChar(50)
+  presetAt            DateTime @map("preset_at") @db.Timestamptz
+  presetBy            String?  @map("preset_by") @db.Uuid
+  
+  // Status
+  isActive            Boolean  @default(true) @map("is_active")
+
+  // Relations
+  tool                Tool     @relation(fields: [toolId], references: [id])
+
+  @@index([toolId])
+  @@map("tool_preset")
+  @@schema("public")
+}
+
+model ToolLife {
+  id                  String   @id @default(uuid()) @db.Uuid
+  toolId              String   @map("tool_id") @db.Uuid
+  machineId           String?  @map("machine_id") @db.Uuid
+  
+  // Life Cycle
+  startedAt           DateTime @map("started_at") @db.Timestamptz
+  endedAt             DateTime? @map("ended_at") @db.Timestamptz
+  
+  // Usage
+  minutesUsed         Int      @map("minutes_used")
+  partsProduced       Int      @map("parts_produced")
+  
+  // End Reason
+  endReason           String?  @map("end_reason") @db.VarChar(50) // WORN, BROKEN, REPLACED, RETIRED
+  
+  // Quality Impact
+  qualityIssues       Int      @default(0) @map("quality_issues")
+  
+  // Notes
+  notes               String?  @db.Text
+
+  // Relations
+  tool                Tool     @relation(fields: [toolId], references: [id])
+
+  @@index([toolId])
+  @@index([startedAt])
+  @@map("tool_life")
+  @@schema("public")
+}
+
+model ToolTransaction {
+  id                  String              @id @default(uuid()) @db.Uuid
+  organizationId      String              @map("organization_id") @db.Uuid
+  toolId              String              @map("tool_id") @db.Uuid
+  
+  // Transaction
+  transactionType     ToolTransactionType @map("transaction_type")
+  quantity            Int
+  
+  // Location
+  fromLocationId      String?             @map("from_location_id") @db.Uuid
+  toLocationId        String?             @map("to_location_id") @db.Uuid
+  
+  // Reference
+  referenceType       String?             @map("reference_type") @db.VarChar(50)
+  referenceId         String?             @map("reference_id") @db.Uuid
+  
+  // Performer
+  performedBy         String              @map("performed_by") @db.Uuid
+  performedAt         DateTime            @default(now()) @map("performed_at") @db.Timestamptz
+  
+  // Notes
+  notes               String?             @db.Text
+
+  // Relations
+  tool                Tool                @relation(fields: [toolId], references: [id])
+
+  @@index([toolId])
+  @@index([performedAt])
+  @@map("tool_transaction")
+  @@schema("public")
+}
+
+model ToolHolder {
+  id                  String   @id @default(uuid()) @db.Uuid
+  organizationId      String   @map("organization_id") @db.Uuid
+  
+  // Basic Info
+  holderNumber        String   @map("holder_number") @db.VarChar(50)
+  name                String   @db.VarChar(255)
+  description         String?  @db.Text
+  
+  // Type
+  holderType          String   @map("holder_type") @db.VarChar(50) // CAT40, BT40, HSK63, etc.
+  taperType           String?  @map("taper_type") @db.VarChar(50)
+  
+  // Specifications
+  maxRpm              Int?     @map("max_rpm")
+  gaugeLength         Decimal? @map("gauge_length") @db.Decimal(10, 4)
+  
+  // Balance
+  balanceGrade        String?  @map("balance_grade") @db.VarChar(20)
+  balanceSpeed        Int?     @map("balance_speed")
+  
+  // Inventory
+  quantityOnHand      Int      @default(0) @map("quantity_on_hand")
+  
+  // Status
+  isActive            Boolean  @default(true) @map("is_active")
+  
+  // Audit
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  organization        Organization @relation("ToolHolderOrganization", fields: [organizationId], references: [id])
+
+  @@unique([organizationId, holderNumber])
+  @@index([organizationId])
+  @@map("tool_holder")
+  @@schema("public")
+}
+
+// =============================================================================
+// QUOTE ADVANCED ANALYSIS TABLES (Phase 6)
+// =============================================================================
+
+model QuoteGeometryAnalysis {
+  id                  String                 @id @default(uuid()) @db.Uuid
+  quoteLineId         String                 @map("quote_line_id") @db.Uuid
+  
+  // Status
+  status              GeometryAnalysisStatus @default(PENDING)
+  startedAt           DateTime?              @map("started_at") @db.Timestamptz
+  completedAt         DateTime?              @map("completed_at") @db.Timestamptz
+  
+  // Source File
+  sourceFileUrl       String                 @map("source_file_url") @db.VarChar(500)
+  sourceFileType      String                 @map("source_file_type") @db.VarChar(20) // STEP, IGES, DXF
+  
+  // Geometry Results
+  boundingBox         Json?                  @map("bounding_box")
+  volume              Decimal?               @db.Decimal(15, 6)
+  surfaceArea         Decimal?               @map("surface_area") @db.Decimal(15, 6)
+  
+  // Feature Detection
+  features            Json                   @default("[]") // Array of detected features
+  featureCount        Int?                   @map("feature_count")
+  
+  // Complexity Analysis
+  complexityScore     Decimal?               @map("complexity_score") @db.Decimal(5, 2)
+  
+  // DFM Assessment
+  dfmIssues           Json                   @default("[]") @map("dfm_issues")
+  dfmWarnings         Json                   @default("[]") @map("dfm_warnings")
+  dfmScore            Decimal?               @map("dfm_score") @db.Decimal(5, 2)
+  
+  // Material Estimation
+  materialWeight      Decimal?               @map("material_weight") @db.Decimal(12, 4)
+  materialRemoval     Decimal?               @map("material_removal") @db.Decimal(5, 2) // Percentage
+  
+  // Error Info
+  errorMessage        String?                @map("error_message") @db.Text
+  
+  // Raw Data
+  analysisData        Json?                  @map("analysis_data")
+  
+  // Audit
+  createdAt           DateTime               @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime               @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  quoteLine           QuoteLine              @relation("QuoteGeometryAnalysisLine", fields: [quoteLineId], references: [id], onDelete: Cascade)
+
+  @@unique([quoteLineId])
+  @@map("quote_geometry_analysis")
+  @@schema("public")
+}
+
+model QuoteToolpath {
+  id                  String   @id @default(uuid()) @db.Uuid
+  quoteLineId         String   @map("quote_line_id") @db.Uuid
+  
+  // Status
+  status              String   @db.VarChar(20) // PENDING, GENERATING, COMPLETE, FAILED
+  startedAt           DateTime? @map("started_at") @db.Timestamptz
+  completedAt         DateTime? @map("completed_at") @db.Timestamptz
+  
+  // Strategy
+  machiningStrategy   String   @map("machining_strategy") @db.VarChar(100)
+  operationSequence   Json     @map("operation_sequence") @default("[]")
+  
+  // Tool Selection
+  selectedTools       Json     @map("selected_tools") @default("[]")
+  toolChangeCount     Int?     @map("tool_change_count")
+  
+  // Time Estimates
+  totalMachiningTime  Decimal? @map("total_machining_time") @db.Decimal(10, 2) // Minutes
+  roughingTime        Decimal? @map("roughing_time") @db.Decimal(10, 2)
+  finishingTime       Decimal? @map("finishing_time") @db.Decimal(10, 2)
+  drillingTime        Decimal? @map("drilling_time") @db.Decimal(10, 2)
+  
+  // Cutting Parameters
+  cuttingParameters   Json     @map("cutting_parameters") @default("{}")
+  
+  // File Output
+  toolpathFileUrl     String?  @map("toolpath_file_url") @db.VarChar(500)
+  
+  // Error Info
+  errorMessage        String?  @map("error_message") @db.Text
+  
+  // Audit
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  quoteLine           QuoteLine @relation("QuoteToolpathLine", fields: [quoteLineId], references: [id], onDelete: Cascade)
+
+  @@unique([quoteLineId])
+  @@map("quote_toolpath")
+  @@schema("public")
+}
+
+model QuoteNesting {
+  id                  String   @id @default(uuid()) @db.Uuid
+  quoteLineId         String   @map("quote_line_id") @db.Uuid
+  
+  // Status
+  status              String   @db.VarChar(20) // PENDING, OPTIMIZING, COMPLETE, FAILED
+  startedAt           DateTime? @map("started_at") @db.Timestamptz
+  completedAt         DateTime? @map("completed_at") @db.Timestamptz
+  
+  // Material
+  materialId          String?  @map("material_id") @db.Uuid
+  sheetSize           Json     @map("sheet_size") // {length, width, thickness}
+  
+  // Nesting Results
+  partsPerSheet       Int      @map("parts_per_sheet")
+  sheetsRequired      Int      @map("sheets_required")
+  materialUtilization Decimal  @map("material_utilization") @db.Decimal(5, 2) // Percentage
+  
+  // Layout
+  nestingLayout       Json     @map("nesting_layout") // Part positions on sheet
+  nestingImageUrl     String?  @map("nesting_image_url") @db.VarChar(500)
+  
+  // Cut Path
+  totalCutLength      Decimal? @map("total_cut_length") @db.Decimal(15, 4)
+  pierceCount         Int?     @map("pierce_count")
+  cutTime             Decimal? @map("cut_time") @db.Decimal(10, 2) // Minutes
+  
+  // Error Info
+  errorMessage        String?  @map("error_message") @db.Text
+  
+  // Audit
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  quoteLine           QuoteLine @relation("QuoteNestingLine", fields: [quoteLineId], references: [id], onDelete: Cascade)
+
+  @@unique([quoteLineId])
+  @@map("quote_nesting")
+  @@schema("public")
+}
+
+model QuoteSimulation {
+  id                  String   @id @default(uuid()) @db.Uuid
+  quoteLineId         String   @map("quote_line_id") @db.Uuid
+  
+  // Status
+  status              String   @db.VarChar(20) // PENDING, RENDERING, COMPLETE, FAILED
+  startedAt           DateTime? @map("started_at") @db.Timestamptz
+  completedAt         DateTime? @map("completed_at") @db.Timestamptz
+  
+  // Simulation Type
+  simulationType      String   @map("simulation_type") @db.VarChar(50) // MACHINING, BENDING, LASER, ASSEMBLY
+  
+  // Output Files
+  videoUrl            String?  @map("video_url") @db.VarChar(500)
+  thumbnailUrl        String?  @map("thumbnail_url") @db.VarChar(500)
+  animationDataUrl    String?  @map("animation_data_url") @db.VarChar(500)
+  
+  // Simulation Details
+  duration            Decimal? @db.Decimal(10, 2) // Seconds of animation
+  frameCount          Int?     @map("frame_count")
+  resolution          String?  @db.VarChar(20) // e.g., "1920x1080"
+  
+  // Metadata
+  simulationConfig    Json     @map("simulation_config") @default("{}")
+  
+  // Error Info
+  errorMessage        String?  @map("error_message") @db.Text
+  
+  // Audit
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  quoteLine           QuoteLine @relation("QuoteSimulationLine", fields: [quoteLineId], references: [id], onDelete: Cascade)
+
+  @@unique([quoteLineId])
+  @@map("quote_simulation")
+  @@schema("public")
+}
+
+// =============================================================================
+// MISSING TABLES FROM FINISHING/QUALITY
+// =============================================================================
+
+model BathAnalysis {
+  id                  String   @id @default(uuid()) @db.Uuid
+  bathId              String   @map("bath_id") @db.Uuid
+  
+  // Analysis Details
+  analysisDate        DateTime @map("analysis_date") @db.Date
+  performedBy         String   @map("performed_by") @db.Uuid
+  
+  // Measurements
+  temperature         Decimal? @db.Decimal(6, 2)
+  ph                  Decimal? @db.Decimal(4, 2)
+  concentration       Decimal? @db.Decimal(8, 4)
+  specificGravity     Decimal? @map("specific_gravity") @db.Decimal(6, 4)
+  
+  // Results
+  results             Json     @default("{}")
+  
+  // Pass/Fail
+  passFail            String   @map("pass_fail") @db.VarChar(10) // PASS, FAIL
+  
+  // Actions
+  actionTaken         String?  @map("action_taken") @db.Text
+  chemicalsAdded      Json?    @map("chemicals_added")
+  
+  // Audit
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  bath                ChemicalBath @relation("BathAnalysisBath", fields: [bathId], references: [id])
+
+  @@index([bathId])
+  @@index([analysisDate])
+  @@map("bath_analysis")
+  @@schema("public")
+}
+
+model OutsideProcessingOrder {
+  id                  String    @id @default(uuid()) @db.Uuid
+  organizationId      String    @map("organization_id") @db.Uuid
+  
+  // OSP Number
+  ospNumber           String    @map("osp_number") @db.VarChar(50)
+  
+  // References
+  supplierId          String    @map("supplier_id") @db.Uuid
+  processId           String    @map("process_id") @db.Uuid
+  workOrderId         String    @map("work_order_id") @db.Uuid
+  
+  // Status
+  status              OspStatus @default(PENDING)
+  
+  // Quantity
+  quantity            Int
+  
+  // Dates
+  shipDate            DateTime? @map("ship_date") @db.Date
+  expectedReturn      DateTime? @map("expected_return") @db.Date
+  actualReturn        DateTime? @map("actual_return") @db.Date
+  
+  // Tracking
+  trackingOut         String?   @map("tracking_out") @db.VarChar(100)
+  trackingIn          String?   @map("tracking_in") @db.VarChar(100)
+  
+  // Cost
+  cost                Decimal?  @db.Decimal(12, 2)
+  
+  // Notes
+  notes               String?   @db.Text
+  
+  // Audit
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  createdBy           String?   @map("created_by") @db.Uuid
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  organization        Organization   @relation("OutsideProcessingOrderOrg", fields: [organizationId], references: [id])
+  workOrder           WorkOrder      @relation("OutsideProcessingOrderWorkOrder", fields: [workOrderId], references: [id])
+  process             FinishingProcess @relation("OutsideProcessingOrderProcess", fields: [processId], references: [id])
+
+  @@unique([organizationId, ospNumber])
+  @@index([organizationId])
+  @@index([workOrderId])
+  @@index([status])
+  @@map("outside_processing_order")
+  @@schema("public")
+}
+
+model Supplier {
+  id                  String   @id @default(uuid()) @db.Uuid
+  organizationId      String   @map("organization_id") @db.Uuid
+  
+  // Basic Info
+  name                String   @db.VarChar(255)
+  code                String   @db.VarChar(50)
+  
+  // Contact
+  contactName         String?  @map("contact_name") @db.VarChar(100)
+  email               String?  @db.VarChar(255)
+  phone               String?  @db.VarChar(50)
+  
+  // Address
+  addressLine1        String?  @map("address_line1") @db.VarChar(255)
+  addressLine2        String?  @map("address_line2") @db.VarChar(255)
+  city                String?  @db.VarChar(100)
+  state               String?  @db.VarChar(100)
+  postalCode          String?  @map("postal_code") @db.VarChar(20)
+  country             String   @default("USA") @db.VarChar(3)
+  
+  // Classification
+  supplierType        String   @default("GENERAL") @map("supplier_type") @db.VarChar(50)
+  
+  // Capabilities
+  capabilities        Json     @default("[]")
+  certifications      Json     @default("[]")
+  
+  // Terms
+  paymentTerms        String?  @map("payment_terms") @db.VarChar(50)
+  leadTimeDays        Int?     @map("lead_time_days")
+  
+  // Rating
+  qualityRating       Decimal? @map("quality_rating") @db.Decimal(3, 2)
+  deliveryRating      Decimal? @map("delivery_rating") @db.Decimal(3, 2)
+  
+  // Status
+  isActive            Boolean  @default(true) @map("is_active")
+  isApproved          Boolean  @default(false) @map("is_approved")
+  approvedAt          DateTime? @map("approved_at") @db.Timestamptz
+  
+  // Audit
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+  createdBy           String?  @map("created_by") @db.Uuid
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  organization        Organization @relation("SupplierOrganization", fields: [organizationId], references: [id])
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@map("supplier")
+  @@schema("public")
+}
+
+// =============================================================================
+// RELATION UPDATES FOR EXISTING MODELS
+// =============================================================================
+// These relations need to be added to existing models in the original schema.prisma
+// See the RELATION_UPDATES.md file for instructions on adding these relations.
+// =============================================================================
