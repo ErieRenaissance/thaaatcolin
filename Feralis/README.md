@@ -1,347 +1,318 @@
-# Feralis Manufacturing Operations Platform
+# Feralis Frontend Application
 
-A comprehensive manufacturing operations platform designed for automated CNC and metal fabrication businesses, handling end-to-end operations from materials receipt to finished goods shipping.
+React + TypeScript + Vite frontend for the Feralis Manufacturing Platform.
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 20+
-- Docker & Docker Compose
-- npm or yarn
+- Node.js 18+ and npm
+- Access to Feralis backend API (running on `http://localhost:3000` by default)
 
-### Development Setup
+### Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd feralis-platform
-   ```
+```bash
+# Navigate to frontend directory
+cd frontend
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+# Install dependencies
+npm install
 
-3. **Start infrastructure services**
-   ```bash
-   npm run docker:up
-   ```
-   This starts PostgreSQL (with TimescaleDB), Redis, and MinIO.
+# Start development server
+npm run dev
+```
 
-4. **Configure environment**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your settings
-   ```
-
-5. **Generate Prisma client**
-   ```bash
-   npm run prisma:generate
-   ```
-
-6. **Run database migrations**
-   ```bash
-   npm run prisma:migrate:dev
-   ```
-
-7. **Seed the database**
-   ```bash
-   npm run prisma:seed
-   ```
-
-8. **Start the development server**
-   ```bash
-   npm run start:dev
-   ```
-
-9. **Access the application**
-   - API: http://localhost:3000
-   - Swagger Docs: http://localhost:3000/docs
-   - MinIO Console: http://localhost:9001 (feralis_minio / feralis_minio_secret)
-   - pgAdmin: http://localhost:5050 (admin@feralis.local / admin) - requires `--profile tools`
-
-### Default Login Credentials
-- **Email:** admin@feralis.com
-- **Password:** Admin123!@#
+The application will be available at `http://localhost:5173`
 
 ## 📁 Project Structure
 
 ```
-feralis-platform/
-├── docker/                     # Docker configuration
-│   ├── docker-compose.yml      # Development infrastructure
-│   └── init-scripts/           # PostgreSQL init scripts
-├── prisma/
-│   ├── schema.prisma           # Database schema
-│   ├── migrations/             # Database migrations
-│   └── seeds/                  # Seed data
+frontend/
+├── public/                 # Static assets
 ├── src/
-│   ├── common/                 # Shared utilities
-│   │   ├── decorators/         # Custom decorators
-│   │   ├── filters/            # Exception filters
-│   │   ├── guards/             # Auth guards
-│   │   ├── interceptors/       # Request/response interceptors
-│   │   ├── pipes/              # Validation pipes
-│   │   ├── prisma/             # Prisma service
-│   │   ├── redis/              # Redis service
-│   │   └── utils/              # Utility functions
-│   ├── config/                 # Configuration
-│   │   ├── configuration.ts    # Config loader
-│   │   └── validation.schema.ts # Env validation
-│   ├── modules/                # Feature modules
-│   │   ├── auth/               # Authentication
-│   │   ├── users/              # User management
-│   │   ├── organizations/      # Organization management
-│   │   ├── facilities/         # Facility management
-│   │   ├── roles/              # Role management
-│   │   ├── permissions/        # Permission management
-│   │   ├── audit/              # Audit logging
-│   │   ├── notifications/      # Notifications
-│   │   ├── files/              # File management
-│   │   ├── health/             # Health checks
-│   │   ├── customers/          # Customer management (Phase 2)
-│   │   ├── parts/              # Parts management (Phase 2)
-│   │   ├── quotes/             # Quote management (Phase 3)
-│   │   ├── orders/             # Order management (Phase 3)
-│   │   └── inventory/          # Inventory management (Phase 3)
-│   ├── app.module.ts           # Root module
-│   └── main.ts                 # Entry point
-├── test/                       # Test files
-├── .env.example                # Environment template
-├── package.json
-├── tsconfig.json
-└── README.md
+│   ├── api/               # API client and backend communication
+│   │   └── client.ts      # Axios-based API client
+│   ├── components/        # React components
+│   │   ├── auth/          # Authentication components
+│   │   │   ├── Login.tsx
+│   │   │   ├── MFAVerification.tsx
+│   │   │   └── ProtectedRoute.tsx
+│   │   ├── common/        # Reusable UI components
+│   │   │   ├── Button.tsx
+│   │   │   ├── Input.tsx
+│   │   │   └── Card.tsx
+│   │   ├── layout/        # Layout components
+│   │   │   └── MainLayout.tsx
+│   │   ├── portal/        # Customer portal components
+│   │   └── analytics/     # Analytics components
+│   ├── contexts/          # State management (Zustand stores)
+│   │   └── auth.ts        # Authentication store
+│   ├── hooks/             # Custom React hooks
+│   ├── router/            # React Router configuration
+│   │   └── index.tsx
+│   ├── styles/            # Global styles
+│   │   └── index.css      # Tailwind CSS + custom styles
+│   ├── types/             # TypeScript type definitions
+│   │   └── index.ts
+│   ├── utils/             # Utility functions
+│   │   └── index.ts
+│   ├── App.tsx            # Root component
+│   └── main.tsx           # Application entry point
+├── .env                   # Environment variables
+├── .env.example           # Environment template
+├── index.html             # HTML entry point
+├── package.json           # Dependencies and scripts
+├── tailwind.config.js     # Tailwind CSS configuration
+├── tsconfig.json          # TypeScript configuration
+└── vite.config.ts         # Vite build configuration
 ```
-
-## 🔐 Authentication
-
-The platform uses JWT-based authentication with the following features:
-
-- **Access Tokens**: Short-lived (15 minutes default)
-- **Refresh Tokens**: Long-lived (7 days default) with rotation
-- **MFA Support**: TOTP-based two-factor authentication
-- **Session Management**: Redis-backed sessions with concurrent session limits
-- **Account Lockout**: Configurable failed attempt threshold
-
-### Auth Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/auth/login` | User login |
-| POST | `/api/v1/auth/mfa/verify` | Verify MFA code |
-| POST | `/api/v1/auth/logout` | User logout |
-| POST | `/api/v1/auth/refresh` | Refresh access token |
-| POST | `/api/v1/auth/forgot-password` | Request password reset |
-| POST | `/api/v1/auth/reset-password` | Reset password |
-| GET | `/api/v1/auth/me` | Get current user |
-| GET | `/api/v1/auth/mfa/setup` | Get MFA setup data |
-| POST | `/api/v1/auth/mfa/enable` | Enable MFA |
-| POST | `/api/v1/auth/mfa/disable` | Disable MFA |
-
-## 👥 Role-Based Access Control
-
-### System Roles
-
-| Role | Description |
-|------|-------------|
-| SUPER_ADMIN | Full system access |
-| ADMIN | Organization administrator |
-| MANAGER | Department manager |
-| OPERATOR | Production floor operator |
-| VIEWER | Read-only access |
-
-### Permission Format
-
-Permissions follow the format: `{module}.{action}[.{scope}]`
-
-Examples:
-- `users.create` - Create users
-- `orders.read` - Read orders
-- `production.manage` - Manage production
-
-## 📊 Database
-
-### Technology Stack
-
-- **PostgreSQL 16** - Primary database
-- **TimescaleDB** - Time-series data (telemetry)
-- **Redis 7** - Caching and sessions
-- **MinIO** - Object storage (S3-compatible)
-
-### Schemas
-
-| Schema | Purpose |
-|--------|---------|
-| public | Core system tables |
-| audit | Immutable audit logs |
 
 ## 🔧 Configuration
 
 ### Environment Variables
 
-Key environment variables (see `.env.example` for full list):
+Create a `.env` file in the frontend directory (use `.env.example` as template):
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PORT` | Server port | 3000 |
-| `DATABASE_URL` | PostgreSQL connection string | - |
-| `REDIS_URL` | Redis connection string | - |
-| `JWT_ACCESS_SECRET` | JWT signing secret | - |
-| `JWT_REFRESH_SECRET` | Refresh token secret | - |
-| `MINIO_ACCESS_KEY` | MinIO access key | - |
-| `MINIO_SECRET_KEY` | MinIO secret key | - |
+```env
+# API Configuration
+VITE_API_URL=http://localhost:3000
+VITE_API_TIMEOUT=30000
+
+# Application Configuration
+VITE_APP_NAME=Feralis Manufacturing Platform
+VITE_APP_VERSION=1.0.0
+
+# Feature Flags
+VITE_ENABLE_ANALYTICS=true
+VITE_ENABLE_PORTAL=true
+VITE_ENABLE_REAL_TIME_UPDATES=true
+
+# Session Configuration
+VITE_SESSION_TIMEOUT=900000
+VITE_REFRESH_INTERVAL=120000
+```
+
+### API Proxy
+
+During development, API calls to `/api/*` are automatically proxied to your backend server (configured in `vite.config.ts`). This avoids CORS issues.
 
 ## 📜 Available Scripts
 
 ```bash
 # Development
-npm run start:dev      # Start with hot reload
-npm run start:debug    # Start with debugger
+npm run dev              # Start dev server with hot reload
+npm run preview          # Preview production build locally
 
-# Production
-npm run build          # Build for production
-npm run start:prod     # Start production server
-
-# Database
-npm run prisma:generate    # Generate Prisma client
-npm run prisma:migrate:dev # Run migrations (dev)
-npm run prisma:migrate:deploy # Run migrations (prod)
-npm run prisma:seed        # Seed database
-npm run prisma:studio      # Open Prisma Studio
-npm run db:reset           # Reset and reseed database
-
-# Docker
-npm run docker:up      # Start infrastructure
-npm run docker:down    # Stop infrastructure
-
-# Testing
-npm run test           # Run unit tests
-npm run test:e2e       # Run e2e tests
-npm run test:cov       # Run with coverage
+# Building
+npm run build            # Build for production
+npm run type-check       # Run TypeScript type checking
 
 # Code Quality
-npm run lint           # Run ESLint
-npm run format         # Run Prettier
+npm run lint             # Run ESLint
+npm run format           # Format code with Prettier
 ```
+
+## 🎨 Styling
+
+This project uses **Tailwind CSS** for styling with custom configuration:
+
+- Custom color palette (primary, secondary)
+- Custom components (buttons, inputs, cards)
+- Responsive design utilities
+- Dark mode support (can be enabled)
+
+### Using Custom Classes
+
+```tsx
+import { Button } from '@/components/common/Button';
+
+<Button variant="primary" size="md">
+  Click Me
+</Button>
+```
+
+## 🔐 Authentication
+
+The app uses JWT-based authentication with the following flow:
+
+1. User logs in with email/password
+2. If MFA is enabled, user is prompted for verification code
+3. Access token is stored in localStorage
+4. Refresh token automatically renews access token
+5. Protected routes require authentication
+
+### Using Authentication in Components
+
+```tsx
+import { useAuthStore } from '@/contexts/auth';
+
+function MyComponent() {
+  const { user, isAuthenticated, login, logout } = useAuthStore();
+  
+  // Your component logic
+}
+```
+
+### Protected Routes
+
+```tsx
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+
+<ProtectedRoute requiredPermission="orders.read">
+  <OrdersPage />
+</ProtectedRoute>
+```
+
+## 🛣️ Routing
+
+Routes are configured using React Router v6 in `src/router/index.tsx`:
+
+- `/login` - Login page
+- `/auth/mfa` - MFA verification
+- `/dashboard` - Main dashboard (protected)
+- `/analytics` - Analytics dashboard (protected)
+- `/orders` - Orders management (protected)
+- `/inventory` - Inventory management (protected)
+- `/quotes` - Quotes management (protected)
+- `/settings` - User settings (protected)
+
+## 📡 API Integration
+
+### Making API Calls
+
+```tsx
+import apiClient from '@/api/client';
+
+// GET request
+const data = await apiClient.get('/api/v1/dashboard');
+
+// POST request
+const result = await apiClient.post('/api/v1/orders', orderData);
+
+// With auth (automatic)
+const dashboard = await apiClient.getDashboard(organizationId);
+```
+
+### Adding New API Endpoints
+
+Edit `src/api/client.ts` to add new methods:
+
+```typescript
+async getMyData(): Promise<MyData> {
+  const response = await this.client.get('/api/v1/my-endpoint');
+  return response.data;
+}
+```
+
+## 🏗️ Building for Production
+
+```bash
+# Build the application
+npm run build
+
+# Preview the production build
+npm run preview
+```
+
+The built files will be in the `dist/` directory and can be served by any static file server.
+
+### Deployment
+
+#### Option 1: Static Hosting (Netlify, Vercel, etc.)
+
+1. Build the project: `npm run build`
+2. Deploy the `dist/` folder to your hosting provider
+3. Configure environment variables in your hosting platform
+4. Set up redirects for SPA routing (all routes → index.html)
+
+#### Option 2: Docker
+
+```dockerfile
+FROM node:18-alpine as build
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM nginx:alpine
+COPY --from=build /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+#### Option 3: Serve with Backend
+
+Place the `dist/` folder contents in your backend's static files directory.
 
 ## 🧪 Testing
 
 ```bash
-# Unit tests
+# Run tests (when test suite is added)
 npm run test
 
-# E2E tests
-npm run test:e2e
-
-# Test coverage
-npm run test:cov
+# Run tests in watch mode
+npm run test:watch
 ```
 
-## 📈 API Documentation
+## 🔍 Troubleshooting
 
-Interactive API documentation is available at `/docs` when the server is running.
+### CORS Issues
 
-Features:
-- Swagger UI interface
-- Try-it-out functionality
-- JWT authentication support
-- Request/response schemas
+If you encounter CORS errors:
+1. Ensure the backend is configured to allow requests from `http://localhost:5173`
+2. Check the proxy configuration in `vite.config.ts`
+3. Verify `VITE_API_URL` in `.env` points to correct backend
 
-## 🔒 Security Features
+### Build Errors
 
-- **Password Hashing**: Argon2id with secure parameters
-- **Password Policy**: Configurable complexity requirements
-- **Breach Detection**: Integration with Have I Been Pwned
-- **Rate Limiting**: Configurable per-endpoint limits
-- **CORS**: Configurable origins
-- **Helmet**: Security headers
-- **Audit Logging**: Comprehensive activity tracking
+If build fails:
+```bash
+# Clear node_modules and reinstall
+rm -rf node_modules package-lock.json
+npm install
 
-## 📦 Implemented Components
+# Clear Vite cache
+rm -rf node_modules/.vite
+```
 
-### Phase 1: Core Infrastructure
-- ✅ Core Infrastructure (PostgreSQL, Redis, MinIO)
-- ✅ Authentication & Authorization (JWT, MFA, RBAC)
-- ✅ User Management
-- ✅ Organization Management
-- ✅ Facility Management
-- ✅ Role & Permission Management
-- ✅ Audit Logging
-- ✅ Notifications
-- ✅ File Management
-- ✅ Health Checks
+### Type Errors
 
-### Phase 2: Master Data
-- ✅ **Customer Management** (15 functions)
-  - Full CRUD with contacts, addresses, requirements
-  - Credit hold management
-  - Portal access configuration
-  - Sales rep assignment
-  - Status workflow
-- ✅ **Parts Management** (20 functions)
-  - Part master with revisions
-  - Operation routing (BOM)
-  - Material requirements
-  - Cost calculation
-  - Part copying
-  - Revision approval workflow
+```bash
+# Regenerate TypeScript declarations
+npm run type-check
+```
 
-### Phase 3: Core Transactions
-- ✅ **Quote Management** (14 functions)
-  - Full quote lifecycle (Draft → Approval → Sent → Accepted)
-  - Quote lines with pricing
-  - Quote revisions
-  - Quote-to-Order conversion
-  - Margin calculation
-- ✅ **Order Management** (13 functions)
-  - Full order lifecycle
-  - Order lines with status tracking
-  - Hold/Release workflow
-  - Release to production
-  - Order statistics
-- ✅ **Inventory Management** (12 functions)
-  - Location hierarchy
-  - Stock receipt/issue/transfer
-  - Adjustments
-  - Lot tracking
-  - Quarantine management
-  - Transaction history
+## 📚 Key Dependencies
 
-## 🗺️ Roadmap
-
-### ✅ Phase 1: Core Infrastructure (Completed)
-- Authentication, Users, Organizations, Facilities, Roles, Permissions, Audit, Files
-
-### ✅ Phase 2: Master Data (Completed)
-- Customer Management
-- Part Management
-
-### ✅ Phase 3: Core Transactions (Completed)
-- Quote Management
-- Order Management
-- Inventory Management
-
-### Phase 4: Production (Next)
-- Machine Management
-- Work Centers
-- Production/Work Orders
-- Shop Floor Control
-
-### Phase 5+
-- Quality Management
-- Advanced Quoting (CAD Analysis)
-- Shipping & Fulfillment
-- Customer Portal
-- Analytics & Reporting
+- **React 18** - UI library
+- **TypeScript** - Type safety
+- **Vite** - Build tool and dev server
+- **React Router 6** - Client-side routing
+- **Zustand** - State management
+- **Axios** - HTTP client
+- **Tailwind CSS** - Utility-first CSS
+- **Lucide React** - Icon library
+- **React Hook Form** - Form handling
+- **Zod** - Schema validation
+- **date-fns** - Date utilities
+- **Recharts** - Data visualization
 
 ## 🤝 Contributing
 
 1. Create a feature branch
 2. Make your changes
-3. Run tests and linting
-4. Submit a pull request
+3. Run linting and type checking
+4. Test thoroughly
+5. Submit a pull request
 
 ## 📄 License
 
-Proprietary - All rights reserved.
+Proprietary - Feralis Manufacturing Platform
+
+## 🆘 Support
+
+For issues or questions:
+- Email: support@feralis.com
+- Documentation: [Internal Wiki]
