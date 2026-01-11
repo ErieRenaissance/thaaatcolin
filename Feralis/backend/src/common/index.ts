@@ -1,16 +1,18 @@
 /**
- * Feralis Manufacturing Platform
- * Common Module Exports
- * Phase 7: Analytics & Customer Portal Implementation
+ * Common Module Barrel Export
+ * 
+ * This file serves as the central export point for all common utilities,
+ * guards, and decorators used throughout the Feralis platform.
+ * 
+ * Usage:
+ *   import { JwtAuthGuard, Roles, CurrentUser } from '@common';
+ *   // or
+ *   import { JwtAuthGuard, Roles, CurrentUser } from '../common';
  */
 
+// ============================================================================
 // Guards
-export * from './guards/auth.guard';
-
-// Decorators
-export * from './decorators/decorators';
-
-// Re-export specific items for convenience
+// ============================================================================
 export {
   JwtAuthGuard,
   PortalAuthGuard,
@@ -22,6 +24,9 @@ export {
   RateLimitGuard,
 } from './guards/auth.guard';
 
+// ============================================================================
+// Decorators
+// ============================================================================
 export {
   Roles,
   PortalRoles,
