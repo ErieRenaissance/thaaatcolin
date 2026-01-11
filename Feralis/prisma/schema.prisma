@@ -3678,3 +3678,616 @@ model TrackingEvent {
   @@map("tracking_event")
   @@schema("public")
 }
+
+// =============================================================================
+// PHASE 7 MODELS - ANALYTICS & REPORTING
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// ANALYTICS ENUMS
+// -----------------------------------------------------------------------------
+
+enum ReportStatus {
+  PENDING
+  RUNNING
+  COMPLETE
+  FAILED
+  CANCELLED
+}
+
+enum ReportType {
+  DASHBOARD
+  SCHEDULED
+  AD_HOC
+  SYSTEM
+  CUSTOM
+}
+
+enum KPICategory {
+  FINANCIAL
+  OPERATIONAL
+  QUALITY
+  DELIVERY
+  CUSTOMER
+  INVENTORY
+  PRODUCTION
+  EFFICIENCY
+}
+
+enum KPIDataType {
+  INTEGER
+  DECIMAL
+  PERCENTAGE
+  CURRENCY
+  DURATION
+  COUNT
+}
+
+enum AggregationType {
+  SUM
+  AVG
+  MIN
+  MAX
+  COUNT
+  LAST
+  FIRST
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum WidgetType {
+  KPI_CARD
+  CHART
+  TABLE
+  GAUGE
+  MAP
+  TIMELINE
+  LIST
+  TEXT
+  SPARKLINE
+}
+
+enum TrendDirection {
+  UP
+  DOWN
+  STABLE
+  VOLATILE
+}
+
+// -----------------------------------------------------------------------------
+// REPORT DEFINITION
+// -----------------------------------------------------------------------------
+
+model ReportDefinition {
+  id                  String       @id @default(uuid()) @db.Uuid
+  organizationId      String       @map("organization_id") @db.Uuid
+  
+  // Identification
+  code                String       @db.VarChar(50)
+  name                String       @db.VarChar(200)
+  description         String?      @db.Text
+  
+  // Classification
+  reportType          ReportType   @map("report_type")
+  module              String?      @db.VarChar(50)
+  category            String?      @db.VarChar(100)
+  
+  // Query Configuration
+  queryTemplate       Json         @map("query_template") @db.JsonB
+  defaultParameters   Json         @default("{}") @map("default_parameters") @db.JsonB
+  
+  // Output Options
+  outputFormats       String[]     @default(["PDF", "EXCEL", "CSV"]) @map("output_formats")
+  defaultFormat       String?      @default("PDF") @map("default_format") @db.VarChar(20)
+  
+  // Display Configuration
+  columns             Json         @default("[]") @db.JsonB
+  sorting             Json         @default("[]") @db.JsonB
+  grouping            String[]     @default([])
+  chartConfig         Json?        @map("chart_config") @db.JsonB
+  
+  // Access Control
+  isPublic            Boolean      @default(false) @map("is_public")
+  ownerId             String?      @map("owner_id") @db.Uuid
+  sharedWithRoles     String[]     @default([]) @map("shared_with_roles")
+  sharedWithUsers     String[]     @default([]) @map("shared_with_users")
+  
+  // Scheduling
+  scheduleCron        String?      @map("schedule_cron") @db.VarChar(100)
+  scheduleTimezone    String       @default("UTC") @map("schedule_timezone") @db.VarChar(50)
+  nextRunAt           DateTime?    @map("next_run_at") @db.Timestamptz
+  lastRunAt           DateTime?    @map("last_run_at") @db.Timestamptz
+  
+  // Email Distribution
+  emailRecipients     String[]     @default([]) @map("email_recipients")
+  emailSubject        String?      @map("email_subject") @db.VarChar(255)
+  
+  // Flags
+  isActive            Boolean      @default(true) @map("is_active")
+  isSystem            Boolean      @default(false) @map("is_system")
+  
+  // Metadata
+  metadata            Json         @default("{}") @db.JsonB
+  
+  // Audit
+  createdAt           DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  createdBy           String?      @map("created_by") @db.Uuid
+  updatedAt           DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+  updatedBy           String?      @map("updated_by") @db.Uuid
+
+  // Relations
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  owner               User?        @relation("ReportOwner", fields: [ownerId], references: [id])
+  executions          ReportExecution[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@index([organizationId, reportType])
+  @@index([organizationId, module])
+  @@index([isActive])
+  @@map("report_definition")
+  @@schema("public")
+}
+
+// -----------------------------------------------------------------------------
+// REPORT EXECUTION
+// -----------------------------------------------------------------------------
+
+model ReportExecution {
+  id                  String       @id @default(uuid()) @db.Uuid
+  reportDefinitionId  String       @map("report_definition_id") @db.Uuid
+  organizationId      String       @map("organization_id") @db.Uuid
+  userId              String?      @map("user_id") @db.Uuid
+  
+  // Execution Type
+  executionType       String       @default("MANUAL") @map("execution_type") @db.VarChar(20) // MANUAL, SCHEDULED, API
+  
+  // Parameters Used
+  parameters          Json         @default("{}") @db.JsonB
+  filtersApplied      Json         @default("[]") @map("filters_applied") @db.JsonB
+  
+  // Status
+  status              ReportStatus @default(PENDING)
+  
+  // Timing
+  startedAt           DateTime?    @map("started_at") @db.Timestamptz
+  completedAt         DateTime?    @map("completed_at") @db.Timestamptz
+  executionTimeMs     Int?         @map("execution_time_ms")
+  
+  // Results
+  resultUrl           String?      @map("result_url") @db.VarChar(500)
+  resultFilePath      String?      @map("result_file_path") @db.VarChar(500)
+  resultFileSize      BigInt?      @map("result_file_size")
+  outputFormat        String?      @map("output_format") @db.VarChar(20)
+  rowCount            Int?         @map("row_count")
+  
+  // Error Handling
+  errorMessage        String?      @map("error_message") @db.Text
+  errorDetails        Json?        @map("error_details") @db.JsonB
+  
+  // Distribution
+  distributedTo       String[]     @default([]) @map("distributed_to")
+  distributionStatus  String?      @map("distribution_status") @db.VarChar(50)
+  
+  // Metadata
+  metadata            Json         @default("{}") @db.JsonB
+  
+  // Audit
+  createdAt           DateTime     @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  reportDefinition    ReportDefinition @relation(fields: [reportDefinitionId], references: [id], onDelete: Cascade)
+  organization        Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                User?            @relation("ReportExecutor", fields: [userId], references: [id])
+
+  @@index([reportDefinitionId])
+  @@index([organizationId])
+  @@index([userId])
+  @@index([status])
+  @@index([startedAt(sort: Desc)])
+  @@map("report_execution")
+  @@schema("public")
+}
+
+// -----------------------------------------------------------------------------
+// KPI DEFINITION
+// -----------------------------------------------------------------------------
+
+model KPIDefinition {
+  id                    String          @id @default(uuid()) @db.Uuid
+  organizationId        String          @map("organization_id") @db.Uuid
+  
+  // Identification
+  code                  String          @db.VarChar(50)
+  name                  String          @db.VarChar(200)
+  description           String?         @db.Text
+  
+  // Classification
+  category              KPICategory
+  dataType              KPIDataType     @default(DECIMAL) @map("data_type")
+  
+  // Unit & Display
+  unit                  String?         @db.VarChar(50)
+  prefix                String?         @db.VarChar(10)
+  suffix                String?         @db.VarChar(10)
+  decimalPlaces         Int             @default(2) @map("decimal_places")
+  
+  // Calculation
+  aggregationType       AggregationType @default(SUM) @map("aggregation_type")
+  calculationFormula    Json            @map("calculation_formula") @db.JsonB
+  calculationQuery      String?         @map("calculation_query") @db.Text
+  
+  // Thresholds
+  targetValue           Decimal?        @map("target_value") @db.Decimal(15, 4)
+  warningThreshold      Decimal?        @map("warning_threshold") @db.Decimal(15, 4)
+  criticalThreshold     Decimal?        @map("critical_threshold") @db.Decimal(15, 4)
+  thresholdDirection    String          @default("ABOVE") @map("threshold_direction") @db.VarChar(10) // ABOVE, BELOW
+  higherIsBetter        Boolean         @default(true) @map("higher_is_better")
+  
+  // Comparison & Trend
+  trendPeriod           String          @default("DAY") @map("trend_period") @db.VarChar(20) // HOUR, DAY, WEEK, MONTH, QUARTER, YEAR
+  trendComparison       String          @default("PREVIOUS_PERIOD") @map("trend_comparison") @db.VarChar(30) // PREVIOUS_PERIOD, SAME_LAST_YEAR, BASELINE
+  baselineValue         Decimal?        @map("baseline_value") @db.Decimal(15, 4)
+  
+  // Display
+  displayOrder          Int             @default(0) @map("display_order")
+  isFeatured            Boolean         @default(false) @map("is_featured")
+  icon                  String?         @db.VarChar(50)
+  color                 String?         @db.VarChar(20)
+  
+  // Refresh
+  refreshIntervalMinutes Int            @default(60) @map("refresh_interval_minutes")
+  lastCalculatedAt      DateTime?       @map("last_calculated_at") @db.Timestamptz
+  
+  // Flags
+  isActive              Boolean         @default(true) @map("is_active")
+  isSystem              Boolean         @default(false) @map("is_system")
+  
+  // Metadata
+  metadata              Json            @default("{}") @db.JsonB
+  
+  // Audit
+  createdAt             DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  createdBy             String?         @map("created_by") @db.Uuid
+  updatedAt             DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+  updatedBy             String?         @map("updated_by") @db.Uuid
+
+  // Relations
+  organization          Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  values                KPIValue[]
+  alerts                AnalyticsAlert[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@index([organizationId, category])
+  @@index([organizationId, isActive])
+  @@index([isFeatured])
+  @@map("kpi_definition")
+  @@schema("public")
+}
+
+// -----------------------------------------------------------------------------
+// KPI VALUE (TimescaleDB Hypertable Candidate)
+// -----------------------------------------------------------------------------
+
+model KPIValue {
+  id                  String         @id @default(uuid()) @db.Uuid
+  kpiDefinitionId     String         @map("kpi_definition_id") @db.Uuid
+  organizationId      String         @map("organization_id") @db.Uuid
+  facilityId          String?        @map("facility_id") @db.Uuid
+  
+  // Time
+  timestamp           DateTime       @db.Timestamptz
+  periodStart         DateTime?      @map("period_start") @db.Timestamptz
+  periodEnd           DateTime?      @map("period_end") @db.Timestamptz
+  periodType          String         @default("DAY") @map("period_type") @db.VarChar(20)
+  
+  // Value
+  value               Decimal        @db.Decimal(15, 4)
+  targetValue         Decimal?       @map("target_value") @db.Decimal(15, 4)
+  previousValue       Decimal?       @map("previous_value") @db.Decimal(15, 4)
+  
+  // Variance
+  variance            Decimal?       @db.Decimal(15, 4)
+  variancePercent     Decimal?       @map("variance_percent") @db.Decimal(8, 4)
+  trendDirection      TrendDirection? @map("trend_direction")
+  
+  // Status
+  status              String         @default("NORMAL") @db.VarChar(20) // NORMAL, WARNING, CRITICAL
+  
+  // Dimensions (for drill-down)
+  dimensions          Json           @default("{}") @db.JsonB
+  
+  // Calculation Metadata
+  dataPointsCount     Int?           @map("data_points_count")
+  calculatedAt        DateTime       @default(now()) @map("calculated_at") @db.Timestamptz
+  
+  // Audit
+  createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  kpiDefinition       KPIDefinition  @relation(fields: [kpiDefinitionId], references: [id], onDelete: Cascade)
+  organization        Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  facility            Facility?      @relation(fields: [facilityId], references: [id])
+
+  @@index([kpiDefinitionId, timestamp(sort: Desc)])
+  @@index([organizationId, timestamp(sort: Desc)])
+  @@index([kpiDefinitionId, organizationId, timestamp(sort: Desc)])
+  @@index([facilityId])
+  @@map("kpi_value")
+  @@schema("public")
+}
+
+// -----------------------------------------------------------------------------
+// DASHBOARD
+// -----------------------------------------------------------------------------
+
+model Dashboard {
+  id                  String       @id @default(uuid()) @db.Uuid
+  organizationId      String       @map("organization_id") @db.Uuid
+  userId              String?      @map("user_id") @db.Uuid
+  
+  // Identification
+  code                String       @db.VarChar(50)
+  name                String       @db.VarChar(200)
+  description         String?      @db.Text
+  
+  // Layout
+  layoutType          String       @default("GRID") @map("layout_type") @db.VarChar(20) // GRID, FLEX, MASONRY
+  layout              Json         @default("{}") @db.JsonB
+  
+  // Theme
+  theme               String       @default("LIGHT") @db.VarChar(20) // LIGHT, DARK, SYSTEM
+  customStyles        Json?        @map("custom_styles") @db.JsonB
+  
+  // Access Control
+  isDefault           Boolean      @default(false) @map("is_default")
+  isShared            Boolean      @default(false) @map("is_shared")
+  isPublic            Boolean      @default(false) @map("is_public")
+  sharedWithRoles     String[]     @default([]) @map("shared_with_roles")
+  defaultForRoles     String[]     @default([]) @map("default_for_roles")
+  
+  // Refresh
+  refreshIntervalSeconds Int       @default(300) @map("refresh_interval_seconds")
+  autoRefresh         Boolean      @default(true) @map("auto_refresh")
+  
+  // Flags
+  isActive            Boolean      @default(true) @map("is_active")
+  isSystem            Boolean      @default(false) @map("is_system")
+  
+  // Metadata
+  metadata            Json         @default("{}") @db.JsonB
+  
+  // Audit
+  createdAt           DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  createdBy           String?      @map("created_by") @db.Uuid
+  updatedAt           DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+  updatedBy           String?      @map("updated_by") @db.Uuid
+
+  // Relations
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                User?        @relation("DashboardOwner", fields: [userId], references: [id])
+  widgets             DashboardWidget[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@index([userId])
+  @@index([organizationId, isDefault])
+  @@map("dashboard")
+  @@schema("public")
+}
+
+// -----------------------------------------------------------------------------
+// DASHBOARD WIDGET
+// -----------------------------------------------------------------------------
+
+model DashboardWidget {
+  id                    String       @id @default(uuid()) @db.Uuid
+  dashboardId           String       @map("dashboard_id") @db.Uuid
+  
+  // Identification
+  widgetType            WidgetType   @map("widget_type")
+  title                 String?      @db.VarChar(200)
+  subtitle              String?      @db.VarChar(255)
+  
+  // Position & Size
+  position              Json         @db.JsonB // { x: number, y: number }
+  size                  Json         @db.JsonB // { width: number, height: number }
+  minSize               Json?        @map("min_size") @db.JsonB
+  maxSize               Json?        @map("max_size") @db.JsonB
+  
+  // Data Source
+  dataSourceType        String       @map("data_source_type") @db.VarChar(20) // KPI, REPORT, QUERY, API
+  dataSourceId          String?      @map("data_source_id") @db.Uuid
+  dataQuery             Json?        @map("data_query") @db.JsonB
+  
+  // Configuration
+  configuration         Json         @default("{}") @db.JsonB
+  chartConfig           Json?        @map("chart_config") @db.JsonB
+  displayOptions        Json?        @map("display_options") @db.JsonB
+  
+  // Drill-Down
+  drillDownConfig       Json?        @map("drill_down_config") @db.JsonB
+  clickAction           Json?        @map("click_action") @db.JsonB
+  
+  // Refresh
+  refreshIntervalSeconds Int?        @map("refresh_interval_seconds")
+  lastRefreshedAt       DateTime?    @map("last_refreshed_at") @db.Timestamptz
+  
+  // Flags
+  isVisible             Boolean      @default(true) @map("is_visible")
+  
+  // Display Order
+  displayOrder          Int          @default(0) @map("display_order")
+  
+  // Metadata
+  metadata              Json         @default("{}") @db.JsonB
+  
+  // Audit
+  createdAt             DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  createdBy             String?      @map("created_by") @db.Uuid
+  updatedAt             DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+  updatedBy             String?      @map("updated_by") @db.Uuid
+
+  // Relations
+  dashboard             Dashboard    @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+
+  @@index([dashboardId])
+  @@index([dashboardId, displayOrder])
+  @@map("dashboard_widget")
+  @@schema("public")
+}
+
+// -----------------------------------------------------------------------------
+// ANALYTICS ALERT
+// -----------------------------------------------------------------------------
+
+model AnalyticsAlert {
+  id                    String         @id @default(uuid()) @db.Uuid
+  organizationId        String         @map("organization_id") @db.Uuid
+  
+  // Identification
+  code                  String         @db.VarChar(50)
+  name                  String         @db.VarChar(200)
+  description           String?        @db.Text
+  
+  // KPI Association
+  kpiDefinitionId       String?        @map("kpi_definition_id") @db.Uuid
+  
+  // Condition
+  condition             Json           @db.JsonB // { operator: '>', value: 100, ... }
+  evaluationQuery       String?        @map("evaluation_query") @db.Text
+  
+  // Severity
+  severity              AlertSeverity  @default(WARNING)
+  
+  // Notifications
+  notificationChannels  String[]       @default(["EMAIL", "IN_APP"]) @map("notification_channels")
+  recipients            Json           @default("{}") @db.JsonB // { emails: [], userIds: [], roleIds: [] }
+  
+  // Throttling
+  cooldownMinutes       Int            @default(60) @map("cooldown_minutes")
+  maxAlertsPerDay       Int?           @map("max_alerts_per_day")
+  
+  // Schedule
+  evaluationCron        String?        @map("evaluation_cron") @db.VarChar(100)
+  lastEvaluatedAt       DateTime?      @map("last_evaluated_at") @db.Timestamptz
+  nextEvaluationAt      DateTime?      @map("next_evaluation_at") @db.Timestamptz
+  
+  // Statistics
+  triggerCount          Int            @default(0) @map("trigger_count")
+  lastTriggeredAt       DateTime?      @map("last_triggered_at") @db.Timestamptz
+  
+  // Flags
+  isActive              Boolean        @default(true) @map("is_active")
+  
+  // Metadata
+  metadata              Json           @default("{}") @db.JsonB
+  
+  // Audit
+  createdAt             DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  createdBy             String?        @map("created_by") @db.Uuid
+  updatedAt             DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+  updatedBy             String?        @map("updated_by") @db.Uuid
+
+  // Relations
+  organization          Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  kpiDefinition         KPIDefinition? @relation(fields: [kpiDefinitionId], references: [id])
+  instances             AlertInstance[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@index([organizationId, isActive])
+  @@index([kpiDefinitionId])
+  @@index([severity])
+  @@map("analytics_alert")
+  @@schema("public")
+}
+
+// -----------------------------------------------------------------------------
+// ALERT INSTANCE
+// -----------------------------------------------------------------------------
+
+model AlertInstance {
+  id                  String         @id @default(uuid()) @db.Uuid
+  analyticsAlertId    String         @map("analytics_alert_id") @db.Uuid
+  organizationId      String         @map("organization_id") @db.Uuid
+  
+  // Timing
+  triggeredAt         DateTime       @default(now()) @map("triggered_at") @db.Timestamptz
+  acknowledgedAt      DateTime?      @map("acknowledged_at") @db.Timestamptz
+  resolvedAt          DateTime?      @map("resolved_at") @db.Timestamptz
+  
+  // Users
+  acknowledgedBy      String?        @map("acknowledged_by") @db.Uuid
+  resolvedBy          String?        @map("resolved_by") @db.Uuid
+  
+  // Values
+  currentValue        Decimal?       @map("current_value") @db.Decimal(15, 4)
+  thresholdValue      Decimal?       @map("threshold_value") @db.Decimal(15, 4)
+  previousValue       Decimal?       @map("previous_value") @db.Decimal(15, 4)
+  
+  // Context
+  context             Json           @default("{}") @db.JsonB // Additional context at time of alert
+  
+  // Resolution
+  resolutionNotes     String?        @map("resolution_notes") @db.Text
+  
+  // Notes
+  notes               String?        @db.Text
+  
+  // Notification Status
+  notificationsSent   Json           @default("[]") @map("notifications_sent") @db.JsonB
+  
+  // Status
+  status              String         @default("ACTIVE") @db.VarChar(20) // ACTIVE, ACKNOWLEDGED, RESOLVED, EXPIRED
+  
+  // Metadata
+  metadata            Json           @default("{}") @db.JsonB
+  
+  // Audit
+  createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  analyticsAlert      AnalyticsAlert @relation(fields: [analyticsAlertId], references: [id], onDelete: Cascade)
+  organization        Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  acknowledger        User?          @relation("AlertAcknowledger", fields: [acknowledgedBy], references: [id])
+  resolver            User?          @relation("AlertResolver", fields: [resolvedBy], references: [id])
+
+  @@index([analyticsAlertId])
+  @@index([organizationId])
+  @@index([triggeredAt(sort: Desc)])
+  @@index([status])
+  @@index([analyticsAlertId, status])
+  @@map("alert_instance")
+  @@schema("public")
+}
+
+// =============================================================================
+// REQUIRED RELATION ADDITIONS TO EXISTING MODELS
+// =============================================================================
+// 
+// Add to Organization model:
+//   reportDefinitions    ReportDefinition[]
+//   reportExecutions     ReportExecution[]
+//   kpiDefinitions       KPIDefinition[]
+//   kpiValues            KPIValue[]
+//   dashboards           Dashboard[]
+//   analyticsAlerts      AnalyticsAlert[]
+//   alertInstances       AlertInstance[]
+//
+// Add to User model:
+//   ownedReports         ReportDefinition[] @relation("ReportOwner")
+//   reportExecutions     ReportExecution[]  @relation("ReportExecutor")
+//   dashboards           Dashboard[]        @relation("DashboardOwner")
+//   acknowledgedAlerts   AlertInstance[]    @relation("AlertAcknowledger")
+//   resolvedAlerts       AlertInstance[]    @relation("AlertResolver")
+//
+// Add to Facility model:
+//   kpiValues            KPIValue[]
+// =============================================================================
