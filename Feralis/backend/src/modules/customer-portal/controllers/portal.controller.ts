@@ -45,9 +45,8 @@ import {
   CreateSavedSearchRequestDto,
   AddFavoriteRequestDto,
 } from '../dto/portal.dto';
-import { PortalAuthGuard } from '../../../common/guards/portal-auth.guard';
-import { PortalRoles } from '../../../common/decorators/portal-roles.decorator';
-import { CurrentPortalUser } from '../../../common/decorators/current-portal-user.decorator';
+import { PortalAuthGuard } from '../../../common/guards/auth.guard';
+import { PortalRoles, CurrentPortalUser } from '../../../common/decorators/decorators';
 
 // ============================================================================
 // PUBLIC AUTHENTICATION ENDPOINTS (No Guard)
@@ -74,7 +73,31 @@ export class PortalAuthController {
     return result;
   }
 
-  @Post('refresh')
+  @Post('forgot-password')
+  @ApiOperation({ summary: 'Request password reset' })
+  @ApiResponse({ status: 200, description: 'Password reset email sent' })
+  @ApiResponse({ status: 404, description: 'Email not found' })
+  async forgotPassword(@Body('email') email: string) {
+    await this.portalService.requestPasswordReset(email);
+    return { message: 'If the email exists, a password reset link has been sent' };
+  }
+
+  @Post('reset-password')
+  @ApiOperation({ summary: 'Reset password with token' })
+  @ApiResponse({ status: 200, description: 'Password reset successful' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired token' })
+  async resetPassword(
+    @Body('token') token: string,
+    @Body('newPassword') newPassword: string,
+  ) {
+    const result = await this.portalService.resetPassword(token, newPassword);
+    if (!result) {
+      throw new HttpException('Invalid or expired reset token', HttpStatus.BAD_REQUEST);
+    }
+    return { message: 'Password reset successful' };
+  }
+
+  @Post('refresh-token')
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiResponse({ status: 200, description: 'Token refreshed' })
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
@@ -121,6 +144,60 @@ export class PortalController {
   }
 
   // ============================================================================
+  // USER PROFILE
+  // ============================================================================
+
+  @Get('profile')
+  @PortalRoles('ADMIN', 'BUYER', 'ENGINEER', 'VIEWER')
+  @ApiOperation({ summary: 'Get current user profile' })
+  @ApiResponse({ status: 200, description: 'User profile' })
+  async getProfile(@CurrentPortalUser() user: any) {
+    return this.portalService.getUserProfile(user.id);
+  }
+
+  @Put('profile')
+  @PortalRoles('ADMIN', 'BUYER', 'ENGINEER', 'VIEWER')
+  @ApiOperation({ summary: 'Update user profile' })
+  @ApiResponse({ status: 200, description: 'Profile updated' })
+  async updateProfile(
+    @Body() updates: any,
+    @CurrentPortalUser() user: any,
+  ) {
+    return this.portalService.updateUserProfile(user.id, updates);
+  }
+
+  @Put('profile/password')
+  @PortalRoles('ADMIN', 'BUYER', 'ENGINEER', 'VIEWER')
+  @ApiOperation({ summary: 'Change password' })
+  @ApiResponse({ status: 200, description: 'Password changed' })
+  async changePassword(
+    @Body('currentPassword') currentPassword: string,
+    @Body('newPassword') newPassword: string,
+    @CurrentPortalUser() user: any,
+  ) {
+    const result = await this.portalService.changePassword(
+      user.id,
+      currentPassword,
+      newPassword,
+    );
+    if (!result) {
+      throw new HttpException('Invalid current password', HttpStatus.BAD_REQUEST);
+    }
+    return { success: true };
+  }
+
+  @Put('profile/notifications')
+  @PortalRoles('ADMIN', 'BUYER', 'ENGINEER', 'VIEWER')
+  @ApiOperation({ summary: 'Update notification preferences' })
+  @ApiResponse({ status: 200, description: 'Preferences updated' })
+  async updateNotificationPreferences(
+    @Body() preferences: any,
+    @CurrentPortalUser() user: any,
+  ) {
+    return this.portalService.updateNotificationPreferences(user.id, preferences);
+  }
+
+  // ============================================================================
   // ORDERS
   // ============================================================================
 
@@ -150,7 +227,7 @@ export class PortalController {
     const request: PortalOrdersRequestDto = {
       status,
       search,
-      dateRange: startDate && endDate ? { start: startDate, end: endDate } : undefined,
+      dateRange: startDate && endDate ? { startDate, endDate } : undefined,
       page: page || 1,
       pageSize: pageSize || 20,
       sortBy: sortBy || 'orderDate',
@@ -187,6 +264,8 @@ export class PortalController {
   @ApiQuery({ name: 'search', required: false, description: 'Search by quote number' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'pageSize', required: false, type: Number })
+  @ApiQuery({ name: 'sortBy', required: false })
+  @ApiQuery({ name: 'sortOrder', required: false })
   @ApiResponse({ status: 200, description: 'List of quotes' })
   async getQuotes(
     @CurrentPortalUser() user: any,
@@ -320,6 +399,14 @@ export class PortalController {
     return this.portalService.getPendingApprovals(user.customerId, user.id, type);
   }
 
+  @Get('approvals/pending')
+  @PortalRoles('ADMIN', 'BUYER', 'ENGINEER')
+  @ApiOperation({ summary: 'Get pending approvals (alias)' })
+  @ApiResponse({ status: 200, description: 'List of pending approvals' })
+  async getPendingApprovals(@CurrentPortalUser() user: any) {
+    return this.portalService.getPendingApprovals(user.customerId, user.id);
+  }
+
   @Get('approvals/:id')
   @PortalRoles('ADMIN', 'BUYER', 'ENGINEER')
   @ApiOperation({ summary: 'Get approval details' })
@@ -392,9 +479,25 @@ export class PortalController {
     return this.portalService.getThreadMessages(id, user.customerId, user.id);
   }
 
+  @Post('messages/threads/:id/messages')
+  @PortalRoles('ADMIN', 'BUYER', 'ENGINEER')
+  @ApiOperation({ summary: 'Send a message to thread' })
+  @ApiParam({ name: 'id', description: 'Thread ID' })
+  @ApiResponse({ status: 201, description: 'Message sent' })
+  async sendMessageToThread(
+    @Param('id', ParseUUIDPipe) threadId: string,
+    @Body(ValidationPipe) request: CreateMessageRequestDto,
+    @CurrentPortalUser() user: any,
+  ) {
+    return this.portalService.sendMessage(user.customerId, user.id, {
+      ...request,
+      threadId,
+    });
+  }
+
   @Post('messages')
   @PortalRoles('ADMIN', 'BUYER', 'ENGINEER')
-  @ApiOperation({ summary: 'Send a message' })
+  @ApiOperation({ summary: 'Send a message (create new thread if needed)' })
   @ApiResponse({ status: 201, description: 'Message sent' })
   async sendMessage(
     @Body(ValidationPipe) request: CreateMessageRequestDto,
@@ -422,16 +525,17 @@ export class PortalController {
   ) {
     return this.portalService.getNotifications(
       user.id,
-      { unreadOnly },
-      { page: page || 1, pageSize: pageSize || 20 },
+      unreadOnly,
+      pageSize || 20,
+      page || 1,
     );
   }
 
-  @Post('notifications/:id/read')
+  @Put('notifications/:id/read')
   @PortalRoles('ADMIN', 'BUYER', 'ENGINEER', 'VIEWER')
   @ApiOperation({ summary: 'Mark notification as read' })
   @ApiParam({ name: 'id', description: 'Notification ID' })
-  @ApiResponse({ status: 200, description: 'Notification marked read' })
+  @ApiResponse({ status: 200, description: 'Notification marked as read' })
   async markNotificationRead(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentPortalUser() user: any,
@@ -440,10 +544,10 @@ export class PortalController {
     return { success: true };
   }
 
-  @Post('notifications/read-all')
+  @Put('notifications/read-all')
   @PortalRoles('ADMIN', 'BUYER', 'ENGINEER', 'VIEWER')
   @ApiOperation({ summary: 'Mark all notifications as read' })
-  @ApiResponse({ status: 200, description: 'All notifications marked read' })
+  @ApiResponse({ status: 200, description: 'All notifications marked as read' })
   async markAllNotificationsRead(@CurrentPortalUser() user: any) {
     await this.portalService.markAllNotificationsRead(user.id);
     return { success: true };
@@ -455,7 +559,7 @@ export class PortalController {
 
   @Get('documents')
   @PortalRoles('ADMIN', 'BUYER', 'ENGINEER', 'VIEWER')
-  @ApiOperation({ summary: 'Get available documents' })
+  @ApiOperation({ summary: 'Get accessible documents' })
   @ApiQuery({ name: 'orderId', required: false })
   @ApiQuery({ name: 'quoteId', required: false })
   @ApiQuery({ name: 'type', required: false })
@@ -530,6 +634,18 @@ export class PortalController {
     return this.portalService.getShipmentById(id, user.customerId);
   }
 
+  @Get('shipments/:id/tracking')
+  @PortalRoles('ADMIN', 'BUYER', 'ENGINEER', 'VIEWER')
+  @ApiOperation({ summary: 'Get shipment tracking info' })
+  @ApiParam({ name: 'id', description: 'Shipment ID' })
+  @ApiResponse({ status: 200, description: 'Tracking information' })
+  async getShipmentTracking(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentPortalUser() user: any,
+  ) {
+    return this.portalService.getShipmentTracking(id, user.customerId);
+  }
+
   // ============================================================================
   // SAVED SEARCHES & FAVORITES
   // ============================================================================
@@ -600,59 +716,5 @@ export class PortalController {
   ) {
     await this.portalService.removeFavorite(id, user.id);
     return { success: true };
-  }
-
-  // ============================================================================
-  // USER PROFILE
-  // ============================================================================
-
-  @Get('profile')
-  @PortalRoles('ADMIN', 'BUYER', 'ENGINEER', 'VIEWER')
-  @ApiOperation({ summary: 'Get current user profile' })
-  @ApiResponse({ status: 200, description: 'User profile' })
-  async getProfile(@CurrentPortalUser() user: any) {
-    return this.portalService.getUserProfile(user.id);
-  }
-
-  @Put('profile')
-  @PortalRoles('ADMIN', 'BUYER', 'ENGINEER', 'VIEWER')
-  @ApiOperation({ summary: 'Update user profile' })
-  @ApiResponse({ status: 200, description: 'Profile updated' })
-  async updateProfile(
-    @Body() updates: any,
-    @CurrentPortalUser() user: any,
-  ) {
-    return this.portalService.updateUserProfile(user.id, updates);
-  }
-
-  @Put('profile/password')
-  @PortalRoles('ADMIN', 'BUYER', 'ENGINEER', 'VIEWER')
-  @ApiOperation({ summary: 'Change password' })
-  @ApiResponse({ status: 200, description: 'Password changed' })
-  async changePassword(
-    @Body('currentPassword') currentPassword: string,
-    @Body('newPassword') newPassword: string,
-    @CurrentPortalUser() user: any,
-  ) {
-    const result = await this.portalService.changePassword(
-      user.id,
-      currentPassword,
-      newPassword,
-    );
-    if (!result) {
-      throw new HttpException('Invalid current password', HttpStatus.BAD_REQUEST);
-    }
-    return { success: true };
-  }
-
-  @Put('profile/notifications')
-  @PortalRoles('ADMIN', 'BUYER', 'ENGINEER', 'VIEWER')
-  @ApiOperation({ summary: 'Update notification preferences' })
-  @ApiResponse({ status: 200, description: 'Preferences updated' })
-  async updateNotificationPreferences(
-    @Body() preferences: any,
-    @CurrentPortalUser() user: any,
-  ) {
-    return this.portalService.updateNotificationPreferences(user.id, preferences);
   }
 }
