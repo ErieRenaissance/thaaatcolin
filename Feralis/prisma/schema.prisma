@@ -1,0 +1,3680 @@
+// =============================================================================
+// FERALIS PLATFORM - PRISMA SCHEMA
+// =============================================================================
+// Phase 1: Core Infrastructure & Authentication
+// Phase 2: Customers & Parts
+// Phase 3: Quotes, Orders & Inventory
+// Phase 4: Production (Machines, Work Centers, Work Orders, Shop Floor)
+// Phase 5: Quality Control & Fulfillment (Finishing, Packaging, Shipping)
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch", "multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["public", "audit"]
+}
+
+// =============================================================================
+// PHASE 1 ENUMS
+// =============================================================================
+
+enum UserType {
+  INTERNAL
+  CUSTOMER
+  API
+
+  @@schema("public")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+  LOCKED
+  SUSPENDED
+
+  @@schema("public")
+}
+
+enum NotificationSeverity {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+
+  @@schema("public")
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  SMS
+  PUSH
+
+  @@schema("public")
+}
+
+// =============================================================================
+// ORGANIZATION & FACILITY
+// =============================================================================
+
+model Organization {
+  id                   String    @id @default(uuid()) @db.Uuid
+  name                 String    @db.VarChar(255)
+  legalName            String?   @map("legal_name") @db.VarChar(255)
+  code                 String    @unique @db.VarChar(20)
+  taxId                String?   @map("tax_id") @db.VarChar(50)
+  website              String?   @db.VarChar(255)
+  logoUrl              String?   @map("logo_url") @db.VarChar(500)
+  primaryEmail         String    @map("primary_email") @db.VarChar(255)
+  primaryPhone         String?   @map("primary_phone") @db.VarChar(50)
+  addressLine1         String?   @map("address_line1") @db.VarChar(255)
+  addressLine2         String?   @map("address_line2") @db.VarChar(255)
+  city                 String?   @db.VarChar(100)
+  state                String?   @db.VarChar(100)
+  postalCode           String?   @map("postal_code") @db.VarChar(20)
+  country              String    @default("USA") @db.VarChar(3)
+  timezone             String    @default("America/New_York") @db.VarChar(50)
+  currency             String    @default("USD") @db.VarChar(3)
+  dateFormat           String    @default("MM/DD/YYYY") @map("date_format") @db.VarChar(20)
+  fiscalYearStart      Int       @default(1) @map("fiscal_year_start")
+  settings             Json      @default("{}")
+  subscriptionTier     String?   @default("standard") @map("subscription_tier") @db.VarChar(50)
+  subscriptionExpires  DateTime? @map("subscription_expires") @db.Date
+  isActive             Boolean   @default(true) @map("is_active")
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  facilities    Facility[]
+  users         User[]
+  roles         Role[]
+  notifications Notification[]
+  files         FileAttachment[]
+  configurations SystemConfiguration[]
+  auditLogs     AuditLog[]
+  customers     Customer[]
+  parts         Part[]
+  quotes        Quote[]
+  orders        Order[]
+  inventoryLocations InventoryLocation[]
+  inventory     Inventory[]
+  inventoryTransactions InventoryTransaction[]
+  // Phase 4 Relations
+  workCenters   WorkCenter[]
+  machines      Machine[]
+  workOrders    WorkOrder[]
+  laborEntries  LaborEntry[]
+  scrapRecords  ScrapRecord[]
+  productionSchedules ProductionSchedule[]
+  // Phase 5 Relations
+  qualityInspections QualityInspection[]
+  ncrs          NonConformanceReport[]
+  capas         CorrectiveAction[]
+  finishingProcesses FinishingProcess[]
+  finishingJobs FinishingJob[]
+  packageSpecs  PackageSpecification[]
+  partPackaging PartPackaging[]
+  packages      Package[]
+  carriers      Carrier[]
+  shipments     Shipment[]
+
+  @@map("organization")
+  @@schema("public")
+}
+
+model Facility {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  name           String   @db.VarChar(255)
+  code           String   @db.VarChar(20)
+  type           String   @default("MANUFACTURING") @db.VarChar(50)
+  addressLine1   String?  @map("address_line1") @db.VarChar(255)
+  addressLine2   String?  @map("address_line2") @db.VarChar(255)
+  city           String?  @db.VarChar(100)
+  state          String?  @db.VarChar(100)
+  postalCode     String?  @map("postal_code") @db.VarChar(20)
+  country        String   @default("USA") @db.VarChar(3)
+  timezone       String?  @db.VarChar(50)
+  phone          String?  @db.VarChar(50)
+  managerId      String?  @map("manager_id") @db.Uuid
+  settings       Json     @default("{}")
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  manager        User?        @relation("FacilityManager", fields: [managerId], references: [id])
+  users          User[]       @relation("UserDefaultFacility")
+  userRoles      UserRole[]
+  quotes         Quote[]
+  orders         Order[]
+  inventoryLocations InventoryLocation[]
+  inventory      Inventory[]
+  inventoryTransactions InventoryTransaction[]
+  // Phase 4 Relations
+  workCenters    WorkCenter[]
+  machines       Machine[]
+  workOrders     WorkOrder[]
+  productionSchedules ProductionSchedule[]
+  // Phase 5 Relations
+  qualityInspections QualityInspection[]
+  ncrs           NonConformanceReport[]
+  finishingJobs  FinishingJob[]
+  packages       Package[]
+  shipments      Shipment[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@map("facility")
+  @@schema("public")
+}
+
+// =============================================================================
+// USER MANAGEMENT
+// =============================================================================
+
+model User {
+  id                  String     @id @default(uuid()) @db.Uuid
+  organizationId      String     @map("organization_id") @db.Uuid
+  email               String     @db.VarChar(255)
+  passwordHash        String?    @map("password_hash") @db.VarChar(255)
+  firstName           String     @map("first_name") @db.VarChar(100)
+  lastName            String     @map("last_name") @db.VarChar(100)
+  displayName         String?    @map("display_name") @db.VarChar(200)
+  phone               String?    @db.VarChar(50)
+  mobile              String?    @db.VarChar(50)
+  avatarUrl           String?    @map("avatar_url") @db.VarChar(500)
+  jobTitle            String?    @map("job_title") @db.VarChar(100)
+  department          String?    @db.VarChar(100)
+  employeeId          String?    @map("employee_id") @db.VarChar(50)
+  managerId           String?    @map("manager_id") @db.Uuid
+  userType            UserType   @default(INTERNAL) @map("user_type")
+  defaultFacilityId   String?    @map("default_facility_id") @db.Uuid
+  timezone            String?    @db.VarChar(50)
+  locale              String     @default("en-US") @db.VarChar(10)
+  status              UserStatus @default(PENDING)
+  
+  // MFA
+  mfaEnabled          Boolean    @default(false) @map("mfa_enabled")
+  mfaSecret           String?    @map("mfa_secret") @db.VarChar(255)
+  mfaBackupCodes      String[]   @map("mfa_backup_codes")
+  mfaVerifiedAt       DateTime?  @map("mfa_verified_at") @db.Timestamptz
+  
+  // Password & Security
+  passwordChangedAt   DateTime?  @map("password_changed_at") @db.Timestamptz
+  passwordExpiresAt   DateTime?  @map("password_expires_at") @db.Timestamptz
+  lastLoginAt         DateTime?  @map("last_login_at") @db.Timestamptz
+  lastLoginIp         String?    @map("last_login_ip") @db.VarChar(45)
+  failedLoginCount    Int        @default(0) @map("failed_login_count")
+  lockedUntil         DateTime?  @map("locked_until") @db.Timestamptz
+  
+  // Verification
+  isVerified          Boolean    @default(false) @map("is_verified")
+  verifiedAt          DateTime?  @map("verified_at") @db.Timestamptz
+  verificationToken   String?    @map("verification_token") @db.VarChar(255)
+  verificationExpires DateTime?  @map("verification_expires") @db.Timestamptz
+  
+  // Password Reset
+  resetToken          String?    @map("reset_token") @db.VarChar(255)
+  resetTokenExpires   DateTime?  @map("reset_token_expires") @db.Timestamptz
+  
+  // Preferences
+  settings            Json       @default("{}")
+  
+  // Audit
+  createdAt           DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  createdBy           String?    @map("created_by") @db.Uuid
+  updatedAt           DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+  updatedBy           String?    @map("updated_by") @db.Uuid
+  deletedAt           DateTime?  @map("deleted_at") @db.Timestamptz
+  deletedBy           String?    @map("deleted_by") @db.Uuid
+
+  // Relations
+  organization        Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  manager             User?           @relation("UserManager", fields: [managerId], references: [id])
+  directReports       User[]          @relation("UserManager")
+  defaultFacility     Facility?       @relation("UserDefaultFacility", fields: [defaultFacilityId], references: [id])
+  managedFacilities   Facility[]      @relation("FacilityManager")
+  userRoles           UserRole[]
+  refreshTokens       RefreshToken[]
+  sessions            UserSession[]
+  notifications       Notification[]
+  auditLogs           AuditLog[]
+  uploadedFiles       FileAttachment[]
+  customersAsSalesRep Customer[]      @relation("CustomerSalesRep")
+  quotesAsSalesRep    Quote[]         @relation("QuoteSalesRep")
+  ordersAsSalesRep    Order[]         @relation("OrderSalesRep")
+  // Phase 4 Relations
+  operatingMachines   Machine[]       @relation("MachineOperator")
+  assignedOperations  WorkOrderOperation[] @relation("OperationAssignee")
+  laborEntries        LaborEntry[]    @relation("LaborOperator")
+  acknowledgedAlarms  MachineAlarm[]  @relation("AlarmAcknowledger")
+  assignedMaintenance MachineMaintenance[] @relation("MaintenanceAssignee")
+  performedMaintenance MachineMaintenance[] @relation("MaintenancePerformer")
+  reportedDowntimes   MachineDowntime[] @relation("DowntimeReporter")
+  reportedScrap       ScrapRecord[]   @relation("ScrapReporter")
+  reviewedScrap       ScrapRecord[]   @relation("ScrapReviewer")
+  createdSchedules    ProductionSchedule[] @relation("ScheduleCreator")
+  lockedSchedules     ProductionSchedule[] @relation("ScheduleLocker")
+  // Phase 5 Relations - Quality
+  conductedInspections QualityInspection[] @relation("InspectionInspector")
+  approvedInspections QualityInspection[] @relation("InspectionApprover")
+  inspectionResults   InspectionResult[]
+  reportedNCRs        NonConformanceReport[] @relation("NCRReporter")
+  assignedNCRs        NonConformanceReport[] @relation("NCRAssignee")
+  dispositionedNCRs   NonConformanceReport[] @relation("NCRDisposition")
+  closedNCRs          NonConformanceReport[] @relation("NCRCloser")
+  initiatedCAPAs      CorrectiveAction[] @relation("CAPAInitiator")
+  assignedCAPAs       CorrectiveAction[] @relation("CAPAAssignee")
+  verifiedCAPAs       CorrectiveAction[] @relation("CAPAVerifier")
+  closedCAPAs         CorrectiveAction[] @relation("CAPACloser")
+  // Phase 5 Relations - Fulfillment
+  createdFinishingJobs FinishingJob[]
+  packedPackages      Package[]
+  createdShipments    Shipment[] @relation("ShipmentCreator")
+  shippedShipments    Shipment[] @relation("ShipmentShipper")
+
+  @@unique([organizationId, email])
+  @@index([organizationId])
+  @@index([email])
+  @@index([organizationId, employeeId])
+  @@map("user")
+  @@schema("public")
+}
+
+model RefreshToken {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  token       String    @unique @db.VarChar(500)
+  family      String    @db.VarChar(100)
+  expiresAt   DateTime  @map("expires_at") @db.Timestamptz
+  isRevoked   Boolean   @default(false) @map("is_revoked")
+  revokedAt   DateTime? @map("revoked_at") @db.Timestamptz
+  revokedBy   String?   @map("revoked_by") @db.VarChar(50)
+  userAgent   String?   @map("user_agent") @db.Text
+  ipAddress   String?   @map("ip_address") @db.VarChar(45)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([family])
+  @@map("refresh_token")
+  @@schema("public")
+}
+
+model UserSession {
+  id            String    @id @default(uuid()) @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  sessionToken  String    @unique @map("session_token") @db.VarChar(255)
+  userAgent     String?   @map("user_agent") @db.Text
+  ipAddress     String?   @map("ip_address") @db.VarChar(45)
+  lastActivityAt DateTime @default(now()) @map("last_activity_at") @db.Timestamptz
+  expiresAt     DateTime  @map("expires_at") @db.Timestamptz
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sessionToken])
+  @@map("user_session")
+  @@schema("public")
+}
+
+// =============================================================================
+// ROLES & PERMISSIONS
+// =============================================================================
+
+model Role {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String?  @map("organization_id") @db.Uuid
+  name           String   @db.VarChar(100)
+  code           String   @db.VarChar(50)
+  description    String?  @db.Text
+  isSystem       Boolean  @default(false) @map("is_system")
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  organization    Organization?    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  rolePermissions RolePermission[]
+  userRoles       UserRole[]
+
+  @@unique([organizationId, code])
+  @@map("role")
+  @@schema("public")
+}
+
+model Permission {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique @db.VarChar(100)
+  name        String   @db.VarChar(200)
+  description String?  @db.Text
+  module      String   @db.VarChar(50)
+  action      String   @db.VarChar(50)
+  resource    String?  @db.VarChar(50)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  rolePermissions RolePermission[]
+
+  @@index([module])
+  @@map("permission")
+  @@schema("public")
+}
+
+model RolePermission {
+  roleId       String   @map("role_id") @db.Uuid
+  permissionId String   @map("permission_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permission")
+  @@schema("public")
+}
+
+model UserRole {
+  userId     String    @map("user_id") @db.Uuid
+  roleId     String    @map("role_id") @db.Uuid
+  facilityId String?   @map("facility_id") @db.Uuid
+  grantedAt  DateTime  @default(now()) @map("granted_at") @db.Timestamptz
+  grantedBy  String?   @map("granted_by") @db.Uuid
+  expiresAt  DateTime? @map("expires_at") @db.Timestamptz
+
+  // Relations
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  facility Facility? @relation(fields: [facilityId], references: [id])
+
+  @@id([userId, roleId])
+  @@map("user_role")
+  @@schema("public")
+}
+
+// =============================================================================
+// SYSTEM CONFIGURATION
+// =============================================================================
+
+model SystemConfiguration {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String?  @map("organization_id") @db.Uuid
+  category       String   @db.VarChar(100)
+  key            String   @db.VarChar(100)
+  value          Json
+  valueType      String   @default("STRING") @map("value_type") @db.VarChar(20)
+  description    String?  @db.Text
+  isSensitive    Boolean  @default(false) @map("is_sensitive")
+  isEditable     Boolean  @default(true) @map("is_editable")
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  updatedBy      String?  @map("updated_by") @db.Uuid
+
+  // Relations
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, category, key])
+  @@map("system_configuration")
+  @@schema("public")
+}
+
+// =============================================================================
+// NOTIFICATIONS
+// =============================================================================
+
+model Notification {
+  id             String                @id @default(uuid()) @db.Uuid
+  organizationId String                @map("organization_id") @db.Uuid
+  userId         String                @map("user_id") @db.Uuid
+  type           String                @db.VarChar(50)
+  title          String                @db.VarChar(255)
+  message        String                @db.Text
+  severity       NotificationSeverity  @default(INFO)
+  category       String?               @db.VarChar(50)
+  entityType     String?               @map("entity_type") @db.VarChar(50)
+  entityId       String?               @map("entity_id") @db.Uuid
+  actionUrl      String?               @map("action_url") @db.VarChar(500)
+  data           Json?
+  channels       NotificationChannel[] @default([IN_APP])
+  emailSent      Boolean               @default(false) @map("email_sent")
+  emailSentAt    DateTime?             @map("email_sent_at") @db.Timestamptz
+  smsSent        Boolean               @default(false) @map("sms_sent")
+  smsSentAt      DateTime?             @map("sms_sent_at") @db.Timestamptz
+  pushSent       Boolean               @default(false) @map("push_sent")
+  pushSentAt     DateTime?             @map("push_sent_at") @db.Timestamptz
+  isRead         Boolean               @default(false) @map("is_read")
+  readAt         DateTime?             @map("read_at") @db.Timestamptz
+  isDismissed    Boolean               @default(false) @map("is_dismissed")
+  dismissedAt    DateTime?             @map("dismissed_at") @db.Timestamptz
+  expiresAt      DateTime?             @map("expires_at") @db.Timestamptz
+  createdAt      DateTime              @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, isRead, isDismissed])
+  @@map("notification")
+  @@schema("public")
+}
+
+// =============================================================================
+// FILE ATTACHMENTS
+// =============================================================================
+
+model FileAttachment {
+  id                String    @id @default(uuid()) @db.Uuid
+  organizationId    String    @map("organization_id") @db.Uuid
+  entityType        String    @map("entity_type") @db.VarChar(50)
+  entityId          String    @map("entity_id") @db.Uuid
+  fileName          String    @map("file_name") @db.VarChar(255)
+  fileType          String    @map("file_type") @db.VarChar(100)
+  fileSize          BigInt    @map("file_size")
+  fileExtension     String?   @map("file_extension") @db.VarChar(20)
+  storagePath       String    @map("storage_path") @db.VarChar(500)
+  storageBucket     String    @map("storage_bucket") @db.VarChar(100)
+  documentType      String?   @map("document_type") @db.VarChar(50)
+  description       String?   @db.Text
+  revision          String?   @db.VarChar(20)
+  isCustomerVisible Boolean   @default(false) @map("is_customer_visible")
+  checksum          String?   @db.VarChar(64)
+  thumbnailPath     String?   @map("thumbnail_path") @db.VarChar(500)
+  metadata          Json      @default("{}")
+  uploadedBy        String    @map("uploaded_by") @db.Uuid
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  uploader     User         @relation(fields: [uploadedBy], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([organizationId])
+  @@map("file_attachment")
+  @@schema("public")
+}
+
+// =============================================================================
+// AUDIT LOG
+// =============================================================================
+
+model AuditLog {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String?  @map("organization_id") @db.Uuid
+  userId         String?  @map("user_id") @db.Uuid
+  action         String   @db.VarChar(100)
+  entityType     String   @map("entity_type") @db.VarChar(100)
+  entityId       String?  @map("entity_id") @db.Uuid
+  entityName     String?  @map("entity_name") @db.VarChar(255)
+  oldValues      Json?    @map("old_values")
+  newValues      Json?    @map("new_values")
+  metadata       Json?
+  ipAddress      String?  @map("ip_address") @db.VarChar(45)
+  userAgent      String?  @map("user_agent") @db.Text
+  sessionId      String?  @map("session_id") @db.VarChar(100)
+  requestId      String?  @map("request_id") @db.VarChar(100)
+  timestamp      DateTime @default(now()) @db.Timestamptz
+
+  // Relations
+  organization Organization? @relation(fields: [organizationId], references: [id])
+  user         User?         @relation(fields: [userId], references: [id])
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([timestamp])
+  @@index([action])
+  @@map("audit_log")
+  @@schema("audit")
+}
+
+// =============================================================================
+// PHASE 2 ENUMS - CUSTOMERS
+// =============================================================================
+
+enum CustomerStatus {
+  PROSPECT
+  ACTIVE
+  INACTIVE
+  ON_HOLD
+  BLACKLISTED
+
+  @@schema("public")
+}
+
+enum CustomerType {
+  COMMERCIAL
+  GOVERNMENT
+  EDUCATIONAL
+  NON_PROFIT
+  INDIVIDUAL
+
+  @@schema("public")
+}
+
+enum ContactType {
+  PRIMARY
+  BILLING
+  SHIPPING
+  PURCHASING
+  ENGINEERING
+  QUALITY
+  ACCOUNTS_PAYABLE
+  OTHER
+
+  @@schema("public")
+}
+
+enum AddressType {
+  BILLING
+  SHIPPING
+  BOTH
+
+  @@schema("public")
+}
+
+enum PaymentTerms {
+  NET_10
+  NET_15
+  NET_30
+  NET_45
+  NET_60
+  NET_90
+  DUE_ON_RECEIPT
+  PREPAID
+  COD
+  CUSTOM
+
+  @@schema("public")
+}
+
+// =============================================================================
+// PHASE 2 ENUMS - PARTS
+// =============================================================================
+
+enum PartStatus {
+  DRAFT
+  PENDING_APPROVAL
+  ACTIVE
+  ON_HOLD
+  OBSOLETE
+  DISCONTINUED
+
+  @@schema("public")
+}
+
+enum PartType {
+  MANUFACTURED
+  PURCHASED
+  ASSEMBLY
+  RAW_MATERIAL
+  CONSUMABLE
+  TOOLING
+
+  @@schema("public")
+}
+
+enum ProcessType {
+  CNC_MILLING
+  CNC_TURNING
+  CNC_MILL_TURN
+  SHEET_METAL
+  WELDING
+  ASSEMBLY
+  FINISHING
+  INSPECTION
+
+  @@schema("public")
+}
+
+enum RevisionStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  SUPERSEDED
+  OBSOLETE
+
+  @@schema("public")
+}
+
+enum UnitOfMeasure {
+  EACH
+  FEET
+  INCHES
+  METERS
+  MILLIMETERS
+  POUNDS
+  KILOGRAMS
+  OUNCES
+  GRAMS
+  SQUARE_FEET
+  SQUARE_INCHES
+  SQUARE_METERS
+  LITERS
+  GALLONS
+
+  @@schema("public")
+}
+
+// =============================================================================
+// PHASE 2 MODELS - CUSTOMERS
+// =============================================================================
+
+model Customer {
+  id                  String         @id @default(uuid()) @db.Uuid
+  organizationId      String         @map("organization_id") @db.Uuid
+  
+  // Basic Info
+  name                String         @db.VarChar(255)
+  code                String         @db.VarChar(50)
+  legalName           String?        @map("legal_name") @db.VarChar(255)
+  dbaName             String?        @map("dba_name") @db.VarChar(255)
+  
+  // Classification
+  customerType        CustomerType   @default(COMMERCIAL) @map("customer_type")
+  status              CustomerStatus @default(PROSPECT)
+  industry            String?        @db.VarChar(100)
+  naicsCode           String?        @map("naics_code") @db.VarChar(10)
+  
+  // Tax & Legal
+  taxId               String?        @map("tax_id") @db.VarChar(50)
+  taxExempt           Boolean        @default(false) @map("tax_exempt")
+  taxExemptNumber     String?        @map("tax_exempt_number") @db.VarChar(50)
+  taxExemptExpiry     DateTime?      @map("tax_exempt_expiry") @db.Date
+  
+  // Contact Info
+  website             String?        @db.VarChar(255)
+  primaryEmail        String?        @map("primary_email") @db.VarChar(255)
+  primaryPhone        String?        @map("primary_phone") @db.VarChar(50)
+  fax                 String?        @db.VarChar(50)
+  
+  // Financial
+  paymentTerms        PaymentTerms   @default(NET_30) @map("payment_terms")
+  customPaymentDays   Int?           @map("custom_payment_days")
+  creditLimit         Decimal?       @map("credit_limit") @db.Decimal(15, 2)
+  creditHoldThreshold Decimal?       @map("credit_hold_threshold") @db.Decimal(15, 2)
+  isOnCreditHold      Boolean        @default(false) @map("is_on_credit_hold")
+  currency            String         @default("USD") @db.VarChar(3)
+  
+  // Pricing
+  priceLevel          String?        @map("price_level") @db.VarChar(50)
+  discountPercent     Decimal?       @map("discount_percent") @db.Decimal(5, 2)
+  
+  // Portal Access
+  portalEnabled       Boolean        @default(false) @map("portal_enabled")
+  portalAccessLevel   String?        @map("portal_access_level") @db.VarChar(50)
+  
+  // Sales
+  salesRepId          String?        @map("sales_rep_id") @db.Uuid
+  territoryCode       String?        @map("territory_code") @db.VarChar(50)
+  leadSource          String?        @map("lead_source") @db.VarChar(100)
+  
+  // Quality & Compliance
+  qualityLevel        String?        @map("quality_level") @db.VarChar(50)
+  certifications      String[]       @default([])
+  exportControlled    Boolean        @default(false) @map("export_controlled")
+  itarRestricted      Boolean        @default(false) @map("itar_restricted")
+  
+  // Notes & Metadata
+  internalNotes       String?        @map("internal_notes") @db.Text
+  tags                String[]       @default([])
+  metadata            Json           @default("{}")
+  
+  // Dates
+  firstOrderDate      DateTime?      @map("first_order_date") @db.Date
+  lastOrderDate       DateTime?      @map("last_order_date") @db.Date
+  
+  // Audit
+  createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  createdBy           String?        @map("created_by") @db.Uuid
+  updatedAt           DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+  updatedBy           String?        @map("updated_by") @db.Uuid
+  deletedAt           DateTime?      @map("deleted_at") @db.Timestamptz
+  deletedBy           String?        @map("deleted_by") @db.Uuid
+
+  // Relations
+  organization        Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  salesRep            User?          @relation("CustomerSalesRep", fields: [salesRepId], references: [id])
+  contacts            CustomerContact[]
+  addresses           CustomerAddress[]
+  requirements        CustomerRequirement[]
+  parts               Part[]
+  quotes              Quote[]
+  orders              Order[]
+  // Phase 5 Relations
+  ncrs                NonConformanceReport[]
+  partPackaging       PartPackaging[]
+  shipments           Shipment[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([organizationId, name])
+  @@map("customer")
+  @@schema("public")
+}
+
+model CustomerContact {
+  id              String      @id @default(uuid()) @db.Uuid
+  customerId      String      @map("customer_id") @db.Uuid
+  
+  // Basic Info
+  firstName       String      @map("first_name") @db.VarChar(100)
+  lastName        String      @map("last_name") @db.VarChar(100)
+  title           String?     @db.VarChar(100)
+  department      String?     @db.VarChar(100)
+  
+  // Contact Details
+  email           String?     @db.VarChar(255)
+  phone           String?     @db.VarChar(50)
+  mobile          String?     @db.VarChar(50)
+  fax             String?     @db.VarChar(50)
+  
+  // Classification
+  contactTypes    ContactType[] @default([PRIMARY]) @map("contact_types")
+  isPrimary       Boolean     @default(false) @map("is_primary")
+  
+  // Portal Access
+  portalAccess    Boolean     @default(false) @map("portal_access")
+  portalUserId    String?     @map("portal_user_id") @db.Uuid
+  
+  // Communication Preferences
+  preferredMethod String?     @map("preferred_method") @db.VarChar(50)
+  doNotContact    Boolean     @default(false) @map("do_not_contact")
+  emailOptOut     Boolean     @default(false) @map("email_opt_out")
+  
+  // Notes
+  notes           String?     @db.Text
+  
+  // Status
+  isActive        Boolean     @default(true) @map("is_active")
+  
+  // Audit
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  createdBy       String?     @map("created_by") @db.Uuid
+  updatedAt       DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+  updatedBy       String?     @map("updated_by") @db.Uuid
+
+  // Relations
+  customer        Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@index([customerId, isPrimary])
+  @@map("customer_contact")
+  @@schema("public")
+}
+
+model CustomerAddress {
+  id              String      @id @default(uuid()) @db.Uuid
+  customerId      String      @map("customer_id") @db.Uuid
+  
+  // Address Type
+  addressType     AddressType @default(BOTH) @map("address_type")
+  name            String?     @db.VarChar(100)
+  
+  // Address Fields
+  addressLine1    String      @map("address_line1") @db.VarChar(255)
+  addressLine2    String?     @map("address_line2") @db.VarChar(255)
+  addressLine3    String?     @map("address_line3") @db.VarChar(255)
+  city            String      @db.VarChar(100)
+  state           String      @db.VarChar(100)
+  postalCode      String      @map("postal_code") @db.VarChar(20)
+  country         String      @default("USA") @db.VarChar(3)
+  
+  // Shipping Info
+  attention       String?     @db.VarChar(200)
+  phone           String?     @db.VarChar(50)
+  shippingNotes   String?     @map("shipping_notes") @db.Text
+  
+  // Carrier Preferences
+  preferredCarrier String?    @map("preferred_carrier") @db.VarChar(50)
+  carrierAccount  String?     @map("carrier_account") @db.VarChar(100)
+  shippingMethod  String?     @map("shipping_method") @db.VarChar(50)
+  
+  // Validation
+  isValidated     Boolean     @default(false) @map("is_validated")
+  validatedAt     DateTime?   @map("validated_at") @db.Timestamptz
+  validationSource String?    @map("validation_source") @db.VarChar(50)
+  
+  // Defaults
+  isDefaultBilling  Boolean   @default(false) @map("is_default_billing")
+  isDefaultShipping Boolean   @default(false) @map("is_default_shipping")
+  
+  // Status
+  isActive        Boolean     @default(true) @map("is_active")
+  
+  // Audit
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  createdBy       String?     @map("created_by") @db.Uuid
+  updatedAt       DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+  updatedBy       String?     @map("updated_by") @db.Uuid
+
+  // Relations
+  customer        Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@index([customerId, addressType])
+  @@map("customer_address")
+  @@schema("public")
+}
+
+model CustomerRequirement {
+  id              String   @id @default(uuid()) @db.Uuid
+  customerId      String   @map("customer_id") @db.Uuid
+  
+  // Requirement Details
+  category        String   @db.VarChar(100)
+  name            String   @db.VarChar(200)
+  description     String?  @db.Text
+  requirement     String   @db.Text
+  
+  // Classification
+  isMandatory     Boolean  @default(false) @map("is_mandatory")
+  appliesToQuotes Boolean  @default(true) @map("applies_to_quotes")
+  appliesToOrders Boolean  @default(true) @map("applies_to_orders")
+  appliesToParts  Boolean  @default(false) @map("applies_to_parts")
+  
+  // Validity
+  effectiveDate   DateTime? @map("effective_date") @db.Date
+  expirationDate  DateTime? @map("expiration_date") @db.Date
+  
+  // Status
+  isActive        Boolean  @default(true) @map("is_active")
+  
+  // Audit
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  createdBy       String?  @map("created_by") @db.Uuid
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  customer        Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@index([customerId, category])
+  @@map("customer_requirement")
+  @@schema("public")
+}
+
+// =============================================================================
+// PHASE 2 MODELS - PARTS
+// =============================================================================
+
+model Part {
+  id                  String       @id @default(uuid()) @db.Uuid
+  organizationId      String       @map("organization_id") @db.Uuid
+  
+  // Basic Info
+  partNumber          String       @map("part_number") @db.VarChar(100)
+  name                String       @db.VarChar(255)
+  description         String?      @db.Text
+  
+  // Classification
+  partType            PartType     @default(MANUFACTURED) @map("part_type")
+  status              PartStatus   @default(DRAFT)
+  processType         ProcessType? @map("process_type")
+  
+  // Customer Association
+  customerId          String?      @map("customer_id") @db.Uuid
+  customerPartNumber  String?      @map("customer_part_number") @db.VarChar(100)
+  isCustomerOwned     Boolean      @default(false) @map("is_customer_owned")
+  
+  // Current Revision (denormalized for quick access)
+  currentRevisionId   String?      @map("current_revision_id") @db.Uuid
+  currentRevision     String?      @map("current_revision") @db.VarChar(20)
+  
+  // Unit of Measure
+  uom                 UnitOfMeasure @default(EACH)
+  uomConversionFactor Decimal?     @map("uom_conversion_factor") @db.Decimal(10, 6)
+  
+  // Dimensions (for estimation)
+  length              Decimal?     @db.Decimal(10, 4)
+  width               Decimal?     @db.Decimal(10, 4)
+  height              Decimal?     @db.Decimal(10, 4)
+  dimensionUnit       String?      @map("dimension_unit") @db.VarChar(10)
+  weight              Decimal?     @db.Decimal(10, 4)
+  weightUnit          String?      @map("weight_unit") @db.VarChar(10)
+  
+  // Material
+  defaultMaterialId   String?      @map("default_material_id") @db.Uuid
+  materialSpec        String?      @map("material_spec") @db.VarChar(255)
+  materialGrade       String?      @map("material_grade") @db.VarChar(100)
+  
+  // Costing
+  standardCost        Decimal?     @map("standard_cost") @db.Decimal(15, 4)
+  lastCost            Decimal?     @map("last_cost") @db.Decimal(15, 4)
+  averageCost         Decimal?     @map("average_cost") @db.Decimal(15, 4)
+  targetCost          Decimal?     @map("target_cost") @db.Decimal(15, 4)
+  
+  // Pricing
+  basePrice           Decimal?     @map("base_price") @db.Decimal(15, 4)
+  minimumPrice        Decimal?     @map("minimum_price") @db.Decimal(15, 4)
+  priceBreaks         Json?        @map("price_breaks")
+  
+  // Production
+  standardLeadDays    Int?         @map("standard_lead_days")
+  rushLeadDays        Int?         @map("rush_lead_days")
+  minimumOrderQty     Int?         @map("minimum_order_qty")
+  orderMultiple       Int?         @map("order_multiple")
+  setupTimeMinutes    Int?         @map("setup_time_minutes")
+  cycleTimeMinutes    Decimal?     @map("cycle_time_minutes") @db.Decimal(10, 2)
+  
+  // Quality
+  scrapFactor         Decimal?     @map("scrap_factor") @db.Decimal(5, 4)
+  inspectionRequired  Boolean      @default(false) @map("inspection_required")
+  inspectionPlanId    String?      @map("inspection_plan_id") @db.Uuid
+  certificationRequired Boolean    @default(false) @map("certification_required")
+  
+  // Inventory
+  trackInventory      Boolean      @default(true) @map("track_inventory")
+  trackLots           Boolean      @default(false) @map("track_lots")
+  trackSerials        Boolean      @default(false) @map("track_serials")
+  shelfLifeDays       Int?         @map("shelf_life_days")
+  
+  // Safety Stock
+  safetyStock         Int?         @map("safety_stock")
+  reorderPoint        Int?         @map("reorder_point")
+  reorderQty          Int?         @map("reorder_qty")
+  maxStock            Int?         @map("max_stock")
+  
+  // Purchasing
+  isPurchased         Boolean      @default(false) @map("is_purchased")
+  preferredSupplierId String?      @map("preferred_supplier_id") @db.Uuid
+  purchaseLeadDays    Int?         @map("purchase_lead_days")
+  
+  // CAD/CAM
+  cadFileId           String?      @map("cad_file_id") @db.Uuid
+  ncProgramId         String?      @map("nc_program_id") @db.Uuid
+  
+  // Categorization
+  productLine         String?      @map("product_line") @db.VarChar(100)
+  productFamily       String?      @map("product_family") @db.VarChar(100)
+  commodityCode       String?      @map("commodity_code") @db.VarChar(50)
+  harmonizedCode      String?      @map("harmonized_code") @db.VarChar(20)
+  
+  // Notes
+  internalNotes       String?      @map("internal_notes") @db.Text
+  manufacturingNotes  String?      @map("manufacturing_notes") @db.Text
+  qualityNotes        String?      @map("quality_notes") @db.Text
+  
+  // Metadata
+  tags                String[]     @default([])
+  attributes          Json         @default("{}")
+  
+  // Audit
+  createdAt           DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  createdBy           String?      @map("created_by") @db.Uuid
+  updatedAt           DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+  updatedBy           String?      @map("updated_by") @db.Uuid
+  deletedAt           DateTime?    @map("deleted_at") @db.Timestamptz
+  deletedBy           String?      @map("deleted_by") @db.Uuid
+
+  // Relations
+  organization        Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer            Customer?     @relation(fields: [customerId], references: [id])
+  revisions           PartRevision[]
+  operations          PartOperation[]
+  materials           PartMaterial[]
+  quoteLines          QuoteLine[]
+  orderLines          OrderLine[]
+  inventory           Inventory[]
+  inventoryTransactions InventoryTransaction[]
+  // Phase 4 Relations
+  workOrders          WorkOrder[]
+  // Phase 5 Relations
+  qualityInspections  QualityInspection[]
+  ncrs                NonConformanceReport[]
+  finishingJobs       FinishingJob[]
+  packageContents     PackageContent[]
+  partPackaging       PartPackaging[]
+
+  @@unique([organizationId, partNumber])
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([organizationId, partType])
+  @@index([customerId])
+  @@map("part")
+  @@schema("public")
+}
+
+model PartRevision {
+  id                  String         @id @default(uuid()) @db.Uuid
+  partId              String         @map("part_id") @db.Uuid
+  
+  // Revision Info
+  revision            String         @db.VarChar(20)
+  description         String?        @db.Text
+  changeReason        String?        @map("change_reason") @db.Text
+  
+  // Status
+  status              RevisionStatus @default(DRAFT)
+  
+  // ECO Reference
+  ecoNumber           String?        @map("eco_number") @db.VarChar(50)
+  ecoDate             DateTime?      @map("eco_date") @db.Date
+  
+  // Dates
+  effectiveDate       DateTime?      @map("effective_date") @db.Date
+  expirationDate      DateTime?      @map("expiration_date") @db.Date
+  
+  // CAD Files
+  cadFileId           String?        @map("cad_file_id") @db.Uuid
+  drawingFileId       String?        @map("drawing_file_id") @db.Uuid
+  stepFileId          String?        @map("step_file_id") @db.Uuid
+  
+  // Geometry Analysis (from CAD)
+  boundingBox         Json?          @map("bounding_box")
+  volume              Decimal?       @db.Decimal(15, 6)
+  surfaceArea         Decimal?       @map("surface_area") @db.Decimal(15, 6)
+  featureCount        Int?           @map("feature_count")
+  geometryAnalysis    Json?          @map("geometry_analysis")
+  
+  // Approval
+  approvedBy          String?        @map("approved_by") @db.Uuid
+  approvedAt          DateTime?      @map("approved_at") @db.Timestamptz
+  approvalNotes       String?        @map("approval_notes") @db.Text
+  
+  // Metadata
+  metadata            Json           @default("{}")
+  
+  // Audit
+  createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  createdBy           String?        @map("created_by") @db.Uuid
+  updatedAt           DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  part                Part           @relation(fields: [partId], references: [id], onDelete: Cascade)
+  // Phase 4 Relations
+  workOrders          WorkOrder[]
+  // Phase 5 Relations
+  qualityInspections  QualityInspection[]
+  ncrs                NonConformanceReport[]
+
+  @@unique([partId, revision])
+  @@index([partId])
+  @@index([partId, status])
+  @@map("part_revision")
+  @@schema("public")
+}
+
+model PartOperation {
+  id                  String   @id @default(uuid()) @db.Uuid
+  partId              String   @map("part_id") @db.Uuid
+  
+  // Sequence
+  operationNumber     Int      @map("operation_number")
+  name                String   @db.VarChar(255)
+  description         String?  @db.Text
+  
+  // Work Center
+  workCenterId        String?  @map("work_center_id") @db.Uuid
+  workCenterCode      String?  @map("work_center_code") @db.VarChar(50)
+  
+  // Times (in minutes)
+  setupTime           Decimal? @map("setup_time") @db.Decimal(10, 2)
+  runTimePerUnit      Decimal? @map("run_time_per_unit") @db.Decimal(10, 4)
+  runTimePerBatch     Decimal? @map("run_time_per_batch") @db.Decimal(10, 2)
+  moveTime            Decimal? @map("move_time") @db.Decimal(10, 2)
+  queueTime           Decimal? @map("queue_time") @db.Decimal(10, 2)
+  
+  // Batch
+  batchSize           Int?     @map("batch_size")
+  
+  // Labor
+  laborCount          Int?     @default(1) @map("labor_count")
+  laborRate           Decimal? @map("labor_rate") @db.Decimal(10, 4)
+  
+  // Machine
+  machineId           String?  @map("machine_id") @db.Uuid
+  machineCode         String?  @map("machine_code") @db.VarChar(50)
+  machineRate         Decimal? @map("machine_rate") @db.Decimal(10, 4)
+  
+  // NC Program
+  ncProgramId         String?  @map("nc_program_id") @db.Uuid
+  ncProgramName       String?  @map("nc_program_name") @db.VarChar(255)
+  
+  // Tooling
+  toolingRequired     Boolean  @default(false) @map("tooling_required")
+  toolingList         Json?    @map("tooling_list")
+  fixtureRequired     Boolean  @default(false) @map("fixture_required")
+  fixtureId           String?  @map("fixture_id") @db.Uuid
+  
+  // Quality
+  inspectionRequired  Boolean  @default(false) @map("inspection_required")
+  inspectionType      String?  @map("inspection_type") @db.VarChar(50)
+  
+  // Outside Processing
+  isOutsideProcess    Boolean  @default(false) @map("is_outside_process")
+  outsideSupplierId   String?  @map("outside_supplier_id") @db.Uuid
+  outsideCost         Decimal? @map("outside_cost") @db.Decimal(15, 4)
+  outsideLeadDays     Int?     @map("outside_lead_days")
+  
+  // Instructions
+  instructions        String?  @db.Text
+  safetyNotes         String?  @map("safety_notes") @db.Text
+  qualityNotes        String?  @map("quality_notes") @db.Text
+  
+  // Status
+  isActive            Boolean  @default(true) @map("is_active")
+  
+  // Audit
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+  createdBy           String?  @map("created_by") @db.Uuid
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  part                Part     @relation(fields: [partId], references: [id], onDelete: Cascade)
+
+  @@unique([partId, operationNumber])
+  @@index([partId])
+  @@map("part_operation")
+  @@schema("public")
+}
+
+model PartMaterial {
+  id                  String   @id @default(uuid()) @db.Uuid
+  partId              String   @map("part_id") @db.Uuid
+  
+  // Line Number
+  lineNumber          Int      @map("line_number")
+  
+  // Material Reference
+  materialId          String?  @map("material_id") @db.Uuid
+  materialCode        String?  @map("material_code") @db.VarChar(100)
+  materialName        String   @map("material_name") @db.VarChar(255)
+  materialSpec        String?  @map("material_spec") @db.VarChar(255)
+  
+  // Quantity
+  quantityPer         Decimal  @map("quantity_per") @db.Decimal(15, 6)
+  uom                 UnitOfMeasure @default(EACH)
+  
+  // Dimensions (for stock sizing)
+  length              Decimal? @db.Decimal(10, 4)
+  width               Decimal? @db.Decimal(10, 4)
+  thickness           Decimal? @db.Decimal(10, 4)
+  diameter            Decimal? @db.Decimal(10, 4)
+  dimensionUnit       String?  @map("dimension_unit") @db.VarChar(10)
+  
+  // Scrap & Waste
+  scrapFactor         Decimal? @map("scrap_factor") @db.Decimal(5, 4)
+  setupScrap          Decimal? @map("setup_scrap") @db.Decimal(10, 4)
+  
+  // Costing
+  unitCost            Decimal? @map("unit_cost") @db.Decimal(15, 6)
+  extendedCost        Decimal? @map("extended_cost") @db.Decimal(15, 4)
+  
+  // Operation Reference
+  operationNumber     Int?     @map("operation_number")
+  
+  // Type
+  materialType        String?  @map("material_type") @db.VarChar(50)
+  isPhantom           Boolean  @default(false) @map("is_phantom")
+  
+  // Notes
+  notes               String?  @db.Text
+  
+  // Status
+  isActive            Boolean  @default(true) @map("is_active")
+  
+  // Audit
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+  createdBy           String?  @map("created_by") @db.Uuid
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  part                Part     @relation(fields: [partId], references: [id], onDelete: Cascade)
+
+  @@unique([partId, lineNumber])
+  @@index([partId])
+  @@map("part_material")
+  @@schema("public")
+}
+
+// =============================================================================
+// PHASE 3 ENUMS - QUOTES
+// =============================================================================
+
+enum QuoteStatus {
+  DRAFT
+  PENDING_REVIEW
+  PENDING_APPROVAL
+  APPROVED
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CANCELLED
+
+  @@schema("public")
+}
+
+enum QuotePriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+
+  @@schema("public")
+}
+
+// =============================================================================
+// PHASE 3 ENUMS - ORDERS
+// =============================================================================
+
+enum OrderStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  IN_PRODUCTION
+  PARTIAL_SHIP
+  SHIPPED
+  DELIVERED
+  INVOICED
+  CLOSED
+  CANCELLED
+  ON_HOLD
+
+  @@schema("public")
+}
+
+enum OrderType {
+  STANDARD
+  RUSH
+  PROTOTYPE
+  REPAIR
+  REWORK
+  SAMPLE
+  BLANKET
+
+  @@schema("public")
+}
+
+enum OrderLineStatus {
+  PENDING
+  SCHEDULED
+  IN_PRODUCTION
+  COMPLETE
+  PARTIAL_SHIP
+  SHIPPED
+  CANCELLED
+
+  @@schema("public")
+}
+
+// =============================================================================
+// PHASE 3 ENUMS - INVENTORY
+// =============================================================================
+
+enum InventoryTransactionType {
+  RECEIPT
+  ISSUE
+  ADJUSTMENT
+  TRANSFER
+  SCRAP
+  RETURN
+  CYCLE_COUNT
+  PRODUCTION_COMPLETE
+  PRODUCTION_ISSUE
+
+  @@schema("public")
+}
+
+enum LocationType {
+  RECEIVING
+  RAW_MATERIAL
+  WIP
+  FINISHED_GOODS
+  SHIPPING
+  INSPECTION
+  QUARANTINE
+
+  @@schema("public")
+}
+
+// =============================================================================
+// PHASE 3 MODELS - QUOTES
+// =============================================================================
+
+model Quote {
+  id                  String       @id @default(uuid()) @db.Uuid
+  organizationId      String       @map("organization_id") @db.Uuid
+  facilityId          String?      @map("facility_id") @db.Uuid
+  
+  // Quote Number
+  quoteNumber         String       @map("quote_number") @db.VarChar(50)
+  revision            Int          @default(1)
+  
+  // Customer
+  customerId          String       @map("customer_id") @db.Uuid
+  contactId           String?      @map("contact_id") @db.Uuid
+  
+  // Classification
+  status              QuoteStatus  @default(DRAFT)
+  priority            QuotePriority @default(NORMAL)
+  
+  // RFQ Reference
+  rfqNumber           String?      @map("rfq_number") @db.VarChar(50)
+  rfqDate             DateTime?    @map("rfq_date") @db.Date
+  
+  // Dates
+  quoteDate           DateTime     @default(now()) @map("quote_date") @db.Date
+  validUntil          DateTime?    @map("valid_until") @db.Date
+  requestedDelivery   DateTime?    @map("requested_delivery") @db.Date
+  promisedDelivery    DateTime?    @map("promised_delivery") @db.Date
+  
+  // Pricing Summary
+  subtotal            Decimal      @default(0) @db.Decimal(15, 2)
+  discountPercent     Decimal?     @map("discount_percent") @db.Decimal(5, 2)
+  discountAmount      Decimal?     @map("discount_amount") @db.Decimal(15, 2)
+  taxRate             Decimal?     @map("tax_rate") @db.Decimal(5, 4)
+  taxAmount           Decimal?     @map("tax_amount") @db.Decimal(15, 2)
+  shippingAmount      Decimal?     @map("shipping_amount") @db.Decimal(15, 2)
+  total               Decimal      @default(0) @db.Decimal(15, 2)
+  
+  // Terms
+  paymentTerms        PaymentTerms? @map("payment_terms")
+  fobPoint            String?      @map("fob_point") @db.VarChar(100)
+  shippingMethod      String?      @map("shipping_method") @db.VarChar(50)
+  
+  // Addresses
+  shipToAddressId     String?      @map("ship_to_address_id") @db.Uuid
+  billToAddressId     String?      @map("bill_to_address_id") @db.Uuid
+  
+  // Sales
+  salesRepId          String?      @map("sales_rep_id") @db.Uuid
+  
+  // Notes
+  internalNotes       String?      @map("internal_notes") @db.Text
+  customerNotes       String?      @map("customer_notes") @db.Text
+  termsAndConditions  String?      @map("terms_and_conditions") @db.Text
+  
+  // Approval
+  approvedBy          String?      @map("approved_by") @db.Uuid
+  approvedAt          DateTime?    @map("approved_at") @db.Timestamptz
+  rejectionReason     String?      @map("rejection_reason") @db.Text
+  
+  // Conversion
+  convertedToOrderId  String?      @map("converted_to_order_id") @db.Uuid
+  convertedAt         DateTime?    @map("converted_at") @db.Timestamptz
+  
+  // Metadata
+  tags                String[]     @default([])
+  metadata            Json         @default("{}")
+  
+  // Audit
+  createdAt           DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  createdBy           String?      @map("created_by") @db.Uuid
+  updatedAt           DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+  updatedBy           String?      @map("updated_by") @db.Uuid
+
+  // Relations
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  facility            Facility?    @relation(fields: [facilityId], references: [id])
+  customer            Customer     @relation(fields: [customerId], references: [id])
+  salesRep            User?        @relation("QuoteSalesRep", fields: [salesRepId], references: [id])
+  lines               QuoteLine[]
+
+  @@unique([organizationId, quoteNumber, revision])
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([customerId])
+  @@index([quoteDate])
+  @@map("quote")
+  @@schema("public")
+}
+
+model QuoteLine {
+  id                  String   @id @default(uuid()) @db.Uuid
+  quoteId             String   @map("quote_id") @db.Uuid
+  
+  // Line Number
+  lineNumber          Int      @map("line_number")
+  
+  // Part
+  partId              String?  @map("part_id") @db.Uuid
+  partNumber          String?  @map("part_number") @db.VarChar(100)
+  partRevision        String?  @map("part_revision") @db.VarChar(20)
+  description         String   @db.VarChar(500)
+  
+  // Quantity
+  quantity            Decimal  @db.Decimal(15, 4)
+  uom                 UnitOfMeasure @default(EACH)
+  
+  // Pricing
+  unitPrice           Decimal  @map("unit_price") @db.Decimal(15, 4)
+  extendedPrice       Decimal  @map("extended_price") @db.Decimal(15, 2)
+  
+  // Cost (for margin calculation)
+  unitCost            Decimal? @map("unit_cost") @db.Decimal(15, 4)
+  
+  // Discount
+  discountPercent     Decimal? @map("discount_percent") @db.Decimal(5, 2)
+  discountAmount      Decimal? @map("discount_amount") @db.Decimal(15, 2)
+  
+  // Delivery
+  requestedDate       DateTime? @map("requested_date") @db.Date
+  promisedDate        DateTime? @map("promised_date") @db.Date
+  leadDays            Int?     @map("lead_days")
+  
+  // Notes
+  notes               String?  @db.Text
+  
+  // Metadata
+  metadata            Json     @default("{}")
+  
+  // Audit
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  quote               Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  part                Part?    @relation(fields: [partId], references: [id])
+
+  @@unique([quoteId, lineNumber])
+  @@index([quoteId])
+  @@map("quote_line")
+  @@schema("public")
+}
+
+// =============================================================================
+// PHASE 3 MODELS - ORDERS
+// =============================================================================
+
+model Order {
+  id                  String       @id @default(uuid()) @db.Uuid
+  organizationId      String       @map("organization_id") @db.Uuid
+  facilityId          String?      @map("facility_id") @db.Uuid
+  
+  // Order Number
+  orderNumber         String       @map("order_number") @db.VarChar(50)
+  
+  // Customer
+  customerId          String       @map("customer_id") @db.Uuid
+  contactId           String?      @map("contact_id") @db.Uuid
+  customerPO          String?      @map("customer_po") @db.VarChar(100)
+  
+  // Classification
+  orderType           OrderType    @default(STANDARD) @map("order_type")
+  status              OrderStatus  @default(DRAFT)
+  priority            QuotePriority @default(NORMAL)
+  
+  // Source
+  quoteId             String?      @map("quote_id") @db.Uuid
+  
+  // Dates
+  orderDate           DateTime     @default(now()) @map("order_date") @db.Date
+  requestedDate       DateTime?    @map("requested_date") @db.Date
+  promisedDate        DateTime?    @map("promised_date") @db.Date
+  scheduledDate       DateTime?    @map("scheduled_date") @db.Date
+  shipByDate          DateTime?    @map("ship_by_date") @db.Date
+  
+  // Pricing Summary
+  subtotal            Decimal      @default(0) @db.Decimal(15, 2)
+  discountPercent     Decimal?     @map("discount_percent") @db.Decimal(5, 2)
+  discountAmount      Decimal?     @map("discount_amount") @db.Decimal(15, 2)
+  taxRate             Decimal?     @map("tax_rate") @db.Decimal(5, 4)
+  taxAmount           Decimal?     @map("tax_amount") @db.Decimal(15, 2)
+  shippingAmount      Decimal?     @map("shipping_amount") @db.Decimal(15, 2)
+  total               Decimal      @default(0) @db.Decimal(15, 2)
+  
+  // Terms
+  paymentTerms        PaymentTerms? @map("payment_terms")
+  fobPoint            String?      @map("fob_point") @db.VarChar(100)
+  shippingMethod      String?      @map("shipping_method") @db.VarChar(50)
+  carrierAccount      String?      @map("carrier_account") @db.VarChar(100)
+  
+  // Addresses
+  shipToAddressId     String?      @map("ship_to_address_id") @db.Uuid
+  billToAddressId     String?      @map("bill_to_address_id") @db.Uuid
+  
+  // Sales
+  salesRepId          String?      @map("sales_rep_id") @db.Uuid
+  
+  // Credit
+  creditApproved      Boolean      @default(false) @map("credit_approved")
+  creditApprovedBy    String?      @map("credit_approved_by") @db.Uuid
+  creditApprovedAt    DateTime?    @map("credit_approved_at") @db.Timestamptz
+  
+  // Notes
+  internalNotes       String?      @map("internal_notes") @db.Text
+  productionNotes     String?      @map("production_notes") @db.Text
+  shippingNotes       String?      @map("shipping_notes") @db.Text
+  
+  // Approval
+  approvedBy          String?      @map("approved_by") @db.Uuid
+  approvedAt          DateTime?    @map("approved_at") @db.Timestamptz
+  
+  // Hold
+  holdReason          String?      @map("hold_reason") @db.Text
+  holdBy              String?      @map("hold_by") @db.Uuid
+  holdAt              DateTime?    @map("hold_at") @db.Timestamptz
+  
+  // Metadata
+  tags                String[]     @default([])
+  metadata            Json         @default("{}")
+  
+  // Audit
+  createdAt           DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  createdBy           String?      @map("created_by") @db.Uuid
+  updatedAt           DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+  updatedBy           String?      @map("updated_by") @db.Uuid
+
+  // Relations
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  facility            Facility?    @relation(fields: [facilityId], references: [id])
+  customer            Customer     @relation(fields: [customerId], references: [id])
+  salesRep            User?        @relation("OrderSalesRep", fields: [salesRepId], references: [id])
+  lines               OrderLine[]
+  // Phase 5 Relations
+  packages            Package[]
+  shipments           Shipment[]
+
+  @@unique([organizationId, orderNumber])
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([customerId])
+  @@index([orderDate])
+  @@index([customerPO])
+  @@map("order")
+  @@schema("public")
+}
+
+model OrderLine {
+  id                  String          @id @default(uuid()) @db.Uuid
+  orderId             String          @map("order_id") @db.Uuid
+  
+  // Line Number
+  lineNumber          Int             @map("line_number")
+  
+  // Part
+  partId              String?         @map("part_id") @db.Uuid
+  partNumber          String?         @map("part_number") @db.VarChar(100)
+  partRevision        String?         @map("part_revision") @db.VarChar(20)
+  description         String          @db.VarChar(500)
+  
+  // Quantity
+  quantityOrdered     Decimal         @map("quantity_ordered") @db.Decimal(15, 4)
+  quantityShipped     Decimal         @default(0) @map("quantity_shipped") @db.Decimal(15, 4)
+  quantityRemaining   Decimal         @map("quantity_remaining") @db.Decimal(15, 4)
+  uom                 UnitOfMeasure   @default(EACH)
+  
+  // Status
+  status              OrderLineStatus @default(PENDING)
+  
+  // Pricing
+  unitPrice           Decimal         @map("unit_price") @db.Decimal(15, 4)
+  extendedPrice       Decimal         @map("extended_price") @db.Decimal(15, 2)
+  
+  // Discount
+  discountPercent     Decimal?        @map("discount_percent") @db.Decimal(5, 2)
+  discountAmount      Decimal?        @map("discount_amount") @db.Decimal(15, 2)
+  
+  // Dates
+  requestedDate       DateTime?       @map("requested_date") @db.Date
+  promisedDate        DateTime?       @map("promised_date") @db.Date
+  scheduledDate       DateTime?       @map("scheduled_date") @db.Date
+  
+  // Quote Reference
+  quoteLineId         String?         @map("quote_line_id") @db.Uuid
+  
+  // Notes
+  notes               String?         @db.Text
+  productionNotes     String?         @map("production_notes") @db.Text
+  
+  // Metadata
+  metadata            Json            @default("{}")
+  
+  // Audit
+  createdAt           DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  order               Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  part                Part?           @relation(fields: [partId], references: [id])
+  // Phase 4 Relations
+  workOrders          WorkOrder[]
+  // Phase 5 Relations
+  finishingJobs       FinishingJob[]
+  packageContents     PackageContent[]
+
+  @@unique([orderId, lineNumber])
+  @@index([orderId])
+  @@index([status])
+  @@map("order_line")
+  @@schema("public")
+}
+
+// =============================================================================
+// PHASE 3 MODELS - INVENTORY
+// =============================================================================
+
+model InventoryLocation {
+  id                  String       @id @default(uuid()) @db.Uuid
+  organizationId      String       @map("organization_id") @db.Uuid
+  facilityId          String       @map("facility_id") @db.Uuid
+  
+  // Location Info
+  code                String       @db.VarChar(50)
+  name                String       @db.VarChar(200)
+  description         String?      @db.Text
+  
+  // Classification
+  locationType        LocationType @default(RAW_MATERIAL) @map("location_type")
+  
+  // Hierarchy
+  parentId            String?      @map("parent_id") @db.Uuid
+  zone                String?      @db.VarChar(50)
+  aisle               String?      @db.VarChar(20)
+  rack                String?      @db.VarChar(20)
+  shelf               String?      @db.VarChar(20)
+  bin                 String?      @db.VarChar(20)
+  
+  // Capacity
+  maxCapacity         Decimal?     @map("max_capacity") @db.Decimal(15, 4)
+  capacityUom         UnitOfMeasure? @map("capacity_uom")
+  
+  // Status
+  isActive            Boolean      @default(true) @map("is_active")
+  isPickable          Boolean      @default(true) @map("is_pickable")
+  isReceivable        Boolean      @default(true) @map("is_receivable")
+  
+  // Audit
+  createdAt           DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  createdBy           String?      @map("created_by") @db.Uuid
+  updatedAt           DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  facility            Facility     @relation(fields: [facilityId], references: [id])
+  parent              InventoryLocation? @relation("LocationHierarchy", fields: [parentId], references: [id])
+  children            InventoryLocation[] @relation("LocationHierarchy")
+  inventory           Inventory[]
+  transactionsFrom    InventoryTransaction[] @relation("TransactionFromLocation")
+  transactionsTo      InventoryTransaction[] @relation("TransactionToLocation")
+
+  @@unique([facilityId, code])
+  @@index([organizationId])
+  @@index([facilityId])
+  @@index([locationType])
+  @@map("inventory_location")
+  @@schema("public")
+}
+
+model Inventory {
+  id                  String   @id @default(uuid()) @db.Uuid
+  organizationId      String   @map("organization_id") @db.Uuid
+  facilityId          String   @map("facility_id") @db.Uuid
+  locationId          String   @map("location_id") @db.Uuid
+  
+  // Part
+  partId              String   @map("part_id") @db.Uuid
+  
+  // Lot/Serial
+  lotNumber           String?  @map("lot_number") @db.VarChar(100)
+  serialNumber        String?  @map("serial_number") @db.VarChar(100)
+  
+  // Quantity
+  quantityOnHand      Decimal  @map("quantity_on_hand") @db.Decimal(15, 4)
+  quantityAllocated   Decimal  @default(0) @map("quantity_allocated") @db.Decimal(15, 4)
+  quantityAvailable   Decimal  @map("quantity_available") @db.Decimal(15, 4)
+  uom                 UnitOfMeasure @default(EACH)
+  
+  // Cost
+  unitCost            Decimal? @map("unit_cost") @db.Decimal(15, 6)
+  totalCost           Decimal? @map("total_cost") @db.Decimal(15, 2)
+  
+  // Dates
+  receivedDate        DateTime? @map("received_date") @db.Date
+  expirationDate      DateTime? @map("expiration_date") @db.Date
+  
+  // Status
+  isQuarantined       Boolean  @default(false) @map("is_quarantined")
+  quarantineReason    String?  @map("quarantine_reason") @db.Text
+  
+  // Audit
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  lastCountedAt       DateTime? @map("last_counted_at") @db.Timestamptz
+
+  // Relations
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  facility            Facility     @relation(fields: [facilityId], references: [id])
+  location            InventoryLocation @relation(fields: [locationId], references: [id])
+  part                Part         @relation(fields: [partId], references: [id])
+
+  @@unique([locationId, partId, lotNumber, serialNumber])
+  @@index([organizationId])
+  @@index([facilityId])
+  @@index([partId])
+  @@index([lotNumber])
+  @@map("inventory")
+  @@schema("public")
+}
+
+model InventoryTransaction {
+  id                  String                   @id @default(uuid()) @db.Uuid
+  organizationId      String                   @map("organization_id") @db.Uuid
+  facilityId          String                   @map("facility_id") @db.Uuid
+  
+  // Transaction Info
+  transactionNumber   String                   @map("transaction_number") @db.VarChar(50)
+  transactionType     InventoryTransactionType @map("transaction_type")
+  transactionDate     DateTime                 @default(now()) @map("transaction_date") @db.Timestamptz
+  
+  // Part
+  partId              String                   @map("part_id") @db.Uuid
+  
+  // Lot/Serial
+  lotNumber           String?                  @map("lot_number") @db.VarChar(100)
+  serialNumber        String?                  @map("serial_number") @db.VarChar(100)
+  
+  // Locations
+  fromLocationId      String?                  @map("from_location_id") @db.Uuid
+  toLocationId        String?                  @map("to_location_id") @db.Uuid
+  
+  // Quantity
+  quantity            Decimal                  @db.Decimal(15, 4)
+  uom                 UnitOfMeasure            @default(EACH)
+  
+  // Cost
+  unitCost            Decimal?                 @map("unit_cost") @db.Decimal(15, 6)
+  totalCost           Decimal?                 @map("total_cost") @db.Decimal(15, 2)
+  
+  // Reference
+  referenceType       String?                  @map("reference_type") @db.VarChar(50)
+  referenceId         String?                  @map("reference_id") @db.Uuid
+  referenceNumber     String?                  @map("reference_number") @db.VarChar(100)
+  
+  // Reason
+  reason              String?                  @db.Text
+  
+  // Audit
+  createdAt           DateTime                 @default(now()) @map("created_at") @db.Timestamptz
+  createdBy           String?                  @map("created_by") @db.Uuid
+
+  // Relations
+  organization        Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  facility            Facility                 @relation(fields: [facilityId], references: [id])
+  part                Part                     @relation(fields: [partId], references: [id])
+  fromLocation        InventoryLocation?       @relation("TransactionFromLocation", fields: [fromLocationId], references: [id])
+  toLocation          InventoryLocation?       @relation("TransactionToLocation", fields: [toLocationId], references: [id])
+
+  @@index([organizationId])
+  @@index([facilityId])
+  @@index([partId])
+  @@index([transactionDate])
+  @@index([transactionType])
+  @@index([referenceType, referenceId])
+  @@map("inventory_transaction")
+  @@schema("public")
+}
+
+// =============================================================================
+// PHASE 4 ENUMS - PRODUCTION
+// =============================================================================
+
+enum WorkOrderStatus {
+  CREATED
+  RELEASED
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETE
+  CLOSED
+  CANCELLED
+
+  @@schema("public")
+}
+
+enum OperationStatus {
+  PENDING
+  READY
+  IN_PROGRESS
+  COMPLETE
+  CANCELLED
+  SKIPPED
+
+  @@schema("public")
+}
+
+enum MachineStatus {
+  IDLE
+  RUNNING
+  SETUP
+  BREAKDOWN
+  MAINTENANCE
+  OFFLINE
+
+  @@schema("public")
+}
+
+enum MachineType {
+  CNC_MILL
+  CNC_LATHE
+  CNC_ROUTER
+  LASER_CUTTER
+  PLASMA_CUTTER
+  WATERJET
+  PRESS_BRAKE
+  PUNCH_PRESS
+  WELDING
+  GRINDING
+  EDM
+  INSPECTION
+  OTHER
+
+  @@schema("public")
+}
+
+enum DowntimeType {
+  PLANNED
+  UNPLANNED
+  CHANGEOVER
+  BREAK
+  NO_WORK
+  MATERIAL_SHORTAGE
+  QUALITY_HOLD
+
+  @@schema("public")
+}
+
+enum MaintenanceType {
+  PREVENTIVE
+  CORRECTIVE
+  PREDICTIVE
+  EMERGENCY
+  CALIBRATION
+  INSPECTION
+
+  @@schema("public")
+}
+
+enum MaintenanceStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+  CANCELLED
+
+  @@schema("public")
+}
+
+enum AlarmSeverity {
+  INFO
+  WARNING
+  FAULT
+  CRITICAL
+
+  @@schema("public")
+}
+
+enum AlarmState {
+  ACTIVE
+  ACKNOWLEDGED
+  CLEARED
+
+  @@schema("public")
+}
+
+enum LaborActivityType {
+  SETUP
+  RUN
+  REWORK
+  INSPECTION
+  WAIT
+  TEARDOWN
+
+  @@schema("public")
+}
+
+enum PriorityLevel {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+  CRITICAL
+
+  @@schema("public")
+}
+
+// =============================================================================
+// PHASE 4 MODELS - WORK CENTERS
+// =============================================================================
+
+model WorkCenter {
+  id                  String       @id @default(uuid()) @db.Uuid
+  organizationId      String       @map("organization_id") @db.Uuid
+  facilityId          String       @map("facility_id") @db.Uuid
+  
+  // Work Center Info
+  code                String       @db.VarChar(50)
+  name                String       @db.VarChar(200)
+  description         String?      @db.Text
+  
+  // Rates
+  hourlyRate          Decimal?     @map("hourly_rate") @db.Decimal(10, 2)
+  setupRate           Decimal?     @map("setup_rate") @db.Decimal(10, 2)
+  overheadRate        Decimal?     @map("overhead_rate") @db.Decimal(10, 2)
+  
+  // Capacity
+  capacityHoursDay    Decimal?     @map("capacity_hours_day") @db.Decimal(5, 2)
+  defaultEfficiency   Decimal      @default(100) @map("default_efficiency") @db.Decimal(5, 2)
+  
+  // Queue Settings
+  inputQueueMax       Int?         @map("input_queue_max")
+  outputQueueMax      Int?         @map("output_queue_max")
+  
+  // Status
+  isActive            Boolean      @default(true) @map("is_active")
+  
+  // Audit
+  createdAt           DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy           String?      @map("created_by") @db.Uuid
+  updatedBy           String?      @map("updated_by") @db.Uuid
+
+  // Relations
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  facility            Facility     @relation(fields: [facilityId], references: [id])
+  machines            Machine[]
+  operations          WorkOrderOperation[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@index([facilityId])
+  @@map("work_center")
+  @@schema("public")
+}
+
+// =============================================================================
+// PHASE 4 MODELS - MACHINES
+// =============================================================================
+
+model Machine {
+  id                      String        @id @default(uuid()) @db.Uuid
+  organizationId          String        @map("organization_id") @db.Uuid
+  facilityId              String        @map("facility_id") @db.Uuid
+  workCenterId            String?       @map("work_center_id") @db.Uuid
+  
+  // Machine Info
+  machineCode             String        @map("machine_code") @db.VarChar(50)
+  name                    String        @db.VarChar(200)
+  description             String?       @db.Text
+  
+  // Equipment Details
+  manufacturer            String?       @db.VarChar(100)
+  model                   String?       @db.VarChar(100)
+  serialNumber            String?       @map("serial_number") @db.VarChar(100)
+  machineType             MachineType   @map("machine_type")
+  controlType             String?       @map("control_type") @db.VarChar(50)
+  purchaseDate            DateTime?     @map("purchase_date") @db.Date
+  installDate             DateTime?     @map("install_date") @db.Date
+  warrantyExpiry          DateTime?     @map("warranty_expiry") @db.Date
+  
+  // Status
+  status                  MachineStatus @default(IDLE)
+  statusSince             DateTime?     @map("status_since") @db.Timestamptz
+  currentOperatorId       String?       @map("current_operator_id") @db.Uuid
+  currentWorkOrderId      String?       @map("current_work_order_id") @db.Uuid
+  currentOperationId      String?       @map("current_operation_id") @db.Uuid
+  
+  // Rates
+  hourlyRate              Decimal?      @map("hourly_rate") @db.Decimal(10, 2)
+  setupRate               Decimal?      @map("setup_rate") @db.Decimal(10, 2)
+  
+  // Floor Position
+  locationX               Decimal?      @map("location_x") @db.Decimal(10, 2)
+  locationY               Decimal?      @map("location_y") @db.Decimal(10, 2)
+  floorSection            String?       @map("floor_section") @db.VarChar(50)
+  
+  // Telemetry
+  telemetryEnabled        Boolean       @default(false) @map("telemetry_enabled")
+  telemetryEndpoint       String?       @map("telemetry_endpoint") @db.VarChar(255)
+  telemetryProtocol       String?       @map("telemetry_protocol") @db.VarChar(50)
+  lastTelemetryAt         DateTime?     @map("last_telemetry_at") @db.Timestamptz
+  
+  // Maintenance
+  maintenanceIntervalDays Int?          @map("maintenance_interval_days")
+  lastMaintenanceDate     DateTime?     @map("last_maintenance_date") @db.Date
+  nextMaintenanceDate     DateTime?     @map("next_maintenance_date") @db.Date
+  totalRunHours           Decimal       @default(0) @map("total_run_hours") @db.Decimal(12, 2)
+  
+  // Specifications & Capabilities (JSON)
+  specifications          Json          @default("{}") @db.JsonB
+  capabilities            Json          @default("{}") @db.JsonB
+  
+  // Status
+  isActive                Boolean       @default(true) @map("is_active")
+  
+  // Audit
+  createdAt               DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt               DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy               String?       @map("created_by") @db.Uuid
+  updatedBy               String?       @map("updated_by") @db.Uuid
+
+  // Relations
+  organization            Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  facility                Facility      @relation(fields: [facilityId], references: [id])
+  workCenter              WorkCenter?   @relation(fields: [workCenterId], references: [id])
+  currentOperator         User?         @relation("MachineOperator", fields: [currentOperatorId], references: [id])
+  currentWorkOrder        WorkOrder?    @relation("MachineCurrentWorkOrder", fields: [currentWorkOrderId], references: [id])
+  currentOperation        WorkOrderOperation? @relation("MachineCurrentOperation", fields: [currentOperationId], references: [id])
+  
+  // Child Relations
+  operations              WorkOrderOperation[] @relation("OperationMachine")
+  laborEntries            LaborEntry[]
+  scheduleSlots           ProductionSchedule[]
+  alarms                  MachineAlarm[]
+  maintenanceRecords      MachineMaintenance[]
+  downtimeRecords         MachineDowntime[]
+
+  @@unique([organizationId, machineCode])
+  @@index([organizationId])
+  @@index([facilityId])
+  @@index([workCenterId])
+  @@index([status])
+  @@map("machine")
+  @@schema("public")
+}
+
+model MachineAlarm {
+  id                  String        @id @default(uuid()) @db.Uuid
+  machineId           String        @map("machine_id") @db.Uuid
+  
+  // Alarm Info
+  alarmCode           String        @map("alarm_code") @db.VarChar(50)
+  alarmText           String        @map("alarm_text") @db.VarChar(500)
+  severity            AlarmSeverity
+  state               AlarmState    @default(ACTIVE)
+  
+  // Timing
+  triggeredAt         DateTime      @map("triggered_at") @db.Timestamptz
+  acknowledgedAt      DateTime?     @map("acknowledged_at") @db.Timestamptz
+  clearedAt           DateTime?     @map("cleared_at") @db.Timestamptz
+  
+  // References
+  acknowledgedBy      String?       @map("acknowledged_by") @db.Uuid
+  workOrderId         String?       @map("work_order_id") @db.Uuid
+  operationId         String?       @map("operation_id") @db.Uuid
+  
+  // Additional Info
+  notes               String?       @db.Text
+  metadata            Json          @default("{}") @db.JsonB
+  
+  // Audit
+  createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  machine             Machine       @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  acknowledger        User?         @relation("AlarmAcknowledger", fields: [acknowledgedBy], references: [id])
+  workOrder           WorkOrder?    @relation(fields: [workOrderId], references: [id])
+  operation           WorkOrderOperation? @relation(fields: [operationId], references: [id])
+
+  @@index([machineId])
+  @@index([triggeredAt])
+  @@index([state])
+  @@map("machine_alarm")
+  @@schema("public")
+}
+
+model MachineMaintenance {
+  id                  String            @id @default(uuid()) @db.Uuid
+  machineId           String            @map("machine_id") @db.Uuid
+  
+  // Maintenance Info
+  maintenanceType     MaintenanceType   @map("maintenance_type")
+  title               String            @db.VarChar(200)
+  description         String            @db.Text
+  status              MaintenanceStatus @default(SCHEDULED)
+  
+  // Scheduling
+  scheduledDate       DateTime?         @map("scheduled_date") @db.Date
+  startedAt           DateTime?         @map("started_at") @db.Timestamptz
+  completedAt         DateTime?         @map("completed_at") @db.Timestamptz
+  durationMinutes     Int?              @map("duration_minutes")
+  
+  // Personnel
+  assignedTo          String?           @map("assigned_to") @db.Uuid
+  performedBy         String?           @map("performed_by") @db.Uuid
+  
+  // Costs
+  laborCost           Decimal?          @map("labor_cost") @db.Decimal(12, 2)
+  partsCost           Decimal?          @map("parts_cost") @db.Decimal(12, 2)
+  totalCost           Decimal?          @map("total_cost") @db.Decimal(12, 2)
+  
+  // Parts & Work Done
+  partsReplaced       Json?             @map("parts_replaced") @db.JsonB
+  workPerformed       String?           @map("work_performed") @db.Text
+  findings            String?           @db.Text
+  
+  // Follow-up
+  requiresFollowUp    Boolean           @default(false) @map("requires_follow_up")
+  followUpNotes       String?           @map("follow_up_notes") @db.Text
+  nextMaintenanceDate DateTime?         @map("next_maintenance_date") @db.Date
+  
+  // Meter Readings
+  meterReadingBefore  Decimal?          @map("meter_reading_before") @db.Decimal(12, 2)
+  meterReadingAfter   Decimal?          @map("meter_reading_after") @db.Decimal(12, 2)
+  
+  // Audit
+  createdAt           DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy           String?           @map("created_by") @db.Uuid
+
+  // Relations
+  machine             Machine           @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  assignee            User?             @relation("MaintenanceAssignee", fields: [assignedTo], references: [id])
+  performer           User?             @relation("MaintenancePerformer", fields: [performedBy], references: [id])
+
+  @@index([machineId])
+  @@index([scheduledDate])
+  @@index([status])
+  @@map("machine_maintenance")
+  @@schema("public")
+}
+
+model MachineDowntime {
+  id                  String       @id @default(uuid()) @db.Uuid
+  machineId           String       @map("machine_id") @db.Uuid
+  
+  // Downtime Info
+  downtimeType        DowntimeType @map("downtime_type")
+  reasonCode          String       @map("reason_code") @db.VarChar(50)
+  reasonDescription   String?      @map("reason_description") @db.Text
+  
+  // Timing
+  startTime           DateTime     @map("start_time") @db.Timestamptz
+  endTime             DateTime?    @map("end_time") @db.Timestamptz
+  durationMinutes     Decimal?     @map("duration_minutes") @db.Decimal(10, 2)
+  
+  // Impact
+  workOrderId         String?      @map("work_order_id") @db.Uuid
+  operationId         String?      @map("operation_id") @db.Uuid
+  partsAffected       Int?         @map("parts_affected")
+  
+  // Resolution
+  rootCause           String?      @map("root_cause") @db.Text
+  resolution          String?      @db.Text
+  preventiveAction    String?      @map("preventive_action") @db.Text
+  
+  // Audit
+  reportedBy          String?      @map("reported_by") @db.Uuid
+  createdAt           DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  machine             Machine      @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  workOrder           WorkOrder?   @relation(fields: [workOrderId], references: [id])
+  operation           WorkOrderOperation? @relation(fields: [operationId], references: [id])
+  reporter            User?        @relation("DowntimeReporter", fields: [reportedBy], references: [id])
+
+  @@index([machineId])
+  @@index([startTime])
+  @@index([downtimeType])
+  @@map("machine_downtime")
+  @@schema("public")
+}
+
+// =============================================================================
+// PHASE 4 MODELS - WORK ORDERS
+// =============================================================================
+
+model WorkOrder {
+  id                  String          @id @default(uuid()) @db.Uuid
+  organizationId      String          @map("organization_id") @db.Uuid
+  facilityId          String          @map("facility_id") @db.Uuid
+  
+  // Work Order Info
+  workOrderNumber     String          @map("work_order_number") @db.VarChar(50)
+  parentWorkOrderId   String?         @map("parent_work_order_id") @db.Uuid
+  
+  // Order Reference
+  orderLineId         String?         @map("order_line_id") @db.Uuid
+  
+  // Part Info
+  partId              String          @map("part_id") @db.Uuid
+  partRevisionId      String?         @map("part_revision_id") @db.Uuid
+  
+  // Status & Priority
+  status              WorkOrderStatus @default(CREATED)
+  priority            PriorityLevel   @default(NORMAL)
+  
+  // Quantities
+  quantityOrdered     Int             @map("quantity_ordered")
+  quantityComplete    Int             @default(0) @map("quantity_complete")
+  quantityInProgress  Int             @default(0) @map("quantity_in_progress")
+  quantityScrapped    Int             @default(0) @map("quantity_scrapped")
+  quantityRemaining   Int             @map("quantity_remaining")
+  
+  // Dates
+  dueDate             DateTime        @map("due_date") @db.Date
+  scheduledStart      DateTime?       @map("scheduled_start") @db.Date
+  scheduledComplete   DateTime?       @map("scheduled_complete") @db.Date
+  actualStart         DateTime?       @map("actual_start") @db.Timestamptz
+  actualComplete      DateTime?       @map("actual_complete") @db.Timestamptz
+  
+  // Time Estimates
+  estimatedSetupHours Decimal?        @map("estimated_setup_hours") @db.Decimal(10, 2)
+  estimatedRunHours   Decimal?        @map("estimated_run_hours") @db.Decimal(10, 2)
+  actualSetupHours    Decimal?        @map("actual_setup_hours") @db.Decimal(10, 2)
+  actualRunHours      Decimal?        @map("actual_run_hours") @db.Decimal(10, 2)
+  
+  // Operations Tracking
+  operationCount      Int             @default(0) @map("operation_count")
+  currentOperation    Int?            @map("current_operation")
+  
+  // Material
+  materialReserved    Boolean         @default(false) @map("material_reserved")
+  materialIssued      Boolean         @default(false) @map("material_issued")
+  materialIssueDate   DateTime?       @map("material_issue_date") @db.Timestamptz
+  
+  // Costing
+  estimatedCost       Decimal?        @map("estimated_cost") @db.Decimal(15, 2)
+  actualLaborCost     Decimal?        @map("actual_labor_cost") @db.Decimal(15, 2)
+  actualMachineCost   Decimal?        @map("actual_machine_cost") @db.Decimal(15, 2)
+  actualMaterialCost  Decimal?        @map("actual_material_cost") @db.Decimal(15, 2)
+  totalActualCost     Decimal?        @map("total_actual_cost") @db.Decimal(15, 2)
+  
+  // Notes
+  notes               String?         @db.Text
+  productionNotes     String?         @map("production_notes") @db.Text
+  qualityNotes        String?         @map("quality_notes") @db.Text
+  
+  // Workflow
+  releasedAt          DateTime?       @map("released_at") @db.Timestamptz
+  releasedBy          String?         @map("released_by") @db.Uuid
+  closedAt            DateTime?       @map("closed_at") @db.Timestamptz
+  closedBy            String?         @map("closed_by") @db.Uuid
+  
+  // Metadata
+  metadata            Json            @default("{}") @db.JsonB
+  
+  // Audit
+  createdAt           DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy           String?         @map("created_by") @db.Uuid
+  updatedBy           String?         @map("updated_by") @db.Uuid
+
+  // Relations
+  organization        Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  facility            Facility        @relation(fields: [facilityId], references: [id])
+  orderLine           OrderLine?      @relation(fields: [orderLineId], references: [id])
+  part                Part            @relation(fields: [partId], references: [id])
+  partRevision        PartRevision?   @relation(fields: [partRevisionId], references: [id])
+  parentWorkOrder     WorkOrder?      @relation("WorkOrderHierarchy", fields: [parentWorkOrderId], references: [id])
+  
+  // Child Relations
+  childWorkOrders     WorkOrder[]     @relation("WorkOrderHierarchy")
+  operations          WorkOrderOperation[]
+  laborEntries        LaborEntry[]
+  scrapRecords        ScrapRecord[]
+  scheduleSlots       ProductionSchedule[]
+  machineAlarms       MachineAlarm[]
+  machineDowntimes    MachineDowntime[]
+  currentMachines     Machine[]       @relation("MachineCurrentWorkOrder")
+  // Phase 5 Relations
+  qualityInspections  QualityInspection[]
+  ncrs                NonConformanceReport[]
+  finishingJobs       FinishingJob[]
+  packageContents     PackageContent[]
+
+  @@unique([organizationId, workOrderNumber])
+  @@index([organizationId])
+  @@index([facilityId])
+  @@index([orderLineId])
+  @@index([partId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([priority])
+  @@map("work_order")
+  @@schema("public")
+}
+
+model WorkOrderOperation {
+  id                  String          @id @default(uuid()) @db.Uuid
+  workOrderId         String          @map("work_order_id") @db.Uuid
+  
+  // Sequence
+  sequence            Int
+  operationNumber     Int             @map("operation_number")
+  
+  // Operation Info
+  name                String          @db.VarChar(200)
+  description         String?         @db.Text
+  instructions        String?         @db.Text
+  
+  // Assignment
+  workCenterId        String          @map("work_center_id") @db.Uuid
+  machineId           String?         @map("machine_id") @db.Uuid
+  assignedOperatorId  String?         @map("assigned_operator_id") @db.Uuid
+  
+  // Status
+  status              OperationStatus @default(PENDING)
+  
+  // Standard Times (minutes)
+  setupTimeStandard   Decimal         @default(0) @map("setup_time_standard") @db.Decimal(10, 2)
+  runTimeStandard     Decimal         @default(0) @map("run_time_standard") @db.Decimal(10, 2)
+  teardownTimeStandard Decimal        @default(0) @map("teardown_time_standard") @db.Decimal(10, 2)
+  
+  // Actual Times (minutes)
+  setupTimeActual     Decimal?        @map("setup_time_actual") @db.Decimal(10, 2)
+  runTimeActual       Decimal?        @map("run_time_actual") @db.Decimal(10, 2)
+  teardownTimeActual  Decimal?        @map("teardown_time_actual") @db.Decimal(10, 2)
+  
+  // Quantities
+  quantityRequired    Int             @map("quantity_required")
+  quantityComplete    Int             @default(0) @map("quantity_complete")
+  quantityScrapped    Int             @default(0) @map("quantity_scrapped")
+  quantityRework      Int             @default(0) @map("quantity_rework")
+  
+  // Scheduling
+  scheduledStart      DateTime?       @map("scheduled_start") @db.Timestamptz
+  scheduledEnd        DateTime?       @map("scheduled_end") @db.Timestamptz
+  actualStart         DateTime?       @map("actual_start") @db.Timestamptz
+  actualEnd           DateTime?       @map("actual_end") @db.Timestamptz
+  
+  // NC Program
+  ncProgramId         String?         @map("nc_program_id") @db.Uuid
+  ncProgramName       String?         @map("nc_program_name") @db.VarChar(200)
+  ncProgramRevision   String?         @map("nc_program_revision") @db.VarChar(20)
+  
+  // Tooling
+  toolingRequired     Json?           @map("tooling_required") @db.JsonB
+  toolingVerified     Boolean         @default(false) @map("tooling_verified")
+  
+  // Quality
+  inspectionRequired  Boolean         @default(false) @map("inspection_required")
+  firstPieceRequired  Boolean         @default(false) @map("first_piece_required")
+  firstPieceComplete  Boolean         @default(false) @map("first_piece_complete")
+  
+  // Notes
+  notes               String?         @db.Text
+  setupNotes          String?         @map("setup_notes") @db.Text
+  qualityNotes        String?         @map("quality_notes") @db.Text
+  
+  // Metadata
+  metadata            Json            @default("{}") @db.JsonB
+  
+  // Audit
+  createdAt           DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  workOrder           WorkOrder       @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  workCenter          WorkCenter      @relation(fields: [workCenterId], references: [id])
+  machine             Machine?        @relation("OperationMachine", fields: [machineId], references: [id])
+  assignedOperator    User?           @relation("OperationAssignee", fields: [assignedOperatorId], references: [id])
+  
+  // Child Relations
+  laborEntries        LaborEntry[]
+  scrapRecords        ScrapRecord[]
+  scheduleSlots       ProductionSchedule[]
+  machineAlarms       MachineAlarm[]
+  machineDowntimes    MachineDowntime[]
+  currentMachines     Machine[]       @relation("MachineCurrentOperation")
+  // Phase 5 Relations
+  qualityInspections  QualityInspection[]
+  ncrs                NonConformanceReport[]
+
+  @@unique([workOrderId, sequence])
+  @@index([workOrderId])
+  @@index([workCenterId])
+  @@index([machineId])
+  @@index([status])
+  @@map("work_order_operation")
+  @@schema("public")
+}
+
+// =============================================================================
+// PHASE 4 MODELS - LABOR TRACKING
+// =============================================================================
+
+model LaborEntry {
+  id                  String            @id @default(uuid()) @db.Uuid
+  organizationId      String            @map("organization_id") @db.Uuid
+  
+  // References
+  workOrderId         String            @map("work_order_id") @db.Uuid
+  operationId         String            @map("operation_id") @db.Uuid
+  machineId           String?           @map("machine_id") @db.Uuid
+  operatorId          String            @map("operator_id") @db.Uuid
+  
+  // Activity
+  activityType        LaborActivityType @map("activity_type")
+  
+  // Timing
+  startTime           DateTime          @map("start_time") @db.Timestamptz
+  endTime             DateTime?         @map("end_time") @db.Timestamptz
+  durationMinutes     Decimal?          @map("duration_minutes") @db.Decimal(10, 2)
+  breakMinutes        Decimal           @default(0) @map("break_minutes") @db.Decimal(10, 2)
+  
+  // Production
+  quantityGood        Int               @default(0) @map("quantity_good")
+  quantityScrap       Int               @default(0) @map("quantity_scrap")
+  quantityRework      Int               @default(0) @map("quantity_rework")
+  
+  // Scrap Detail
+  scrapReasonCode     String?           @map("scrap_reason_code") @db.VarChar(50)
+  scrapNotes          String?           @map("scrap_notes") @db.Text
+  
+  // Rates & Cost
+  laborRate           Decimal?          @map("labor_rate") @db.Decimal(10, 2)
+  laborCost           Decimal?          @map("labor_cost") @db.Decimal(12, 2)
+  overheadCost        Decimal?          @map("overhead_cost") @db.Decimal(12, 2)
+  
+  // Status
+  isActive            Boolean           @default(true) @map("is_active")
+  
+  // Notes
+  notes               String?           @db.Text
+  
+  // Metadata
+  metadata            Json              @default("{}") @db.JsonB
+  
+  // Audit
+  createdAt           DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  organization        Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workOrder           WorkOrder         @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  operation           WorkOrderOperation @relation(fields: [operationId], references: [id])
+  machine             Machine?          @relation(fields: [machineId], references: [id])
+  operator            User              @relation("LaborOperator", fields: [operatorId], references: [id])
+  
+  // Child Relations
+  scrapRecords        ScrapRecord[]
+
+  @@index([organizationId])
+  @@index([workOrderId])
+  @@index([operationId])
+  @@index([operatorId])
+  @@index([startTime])
+  @@index([isActive])
+  @@map("labor_entry")
+  @@schema("public")
+}
+
+model ScrapRecord {
+  id                  String      @id @default(uuid()) @db.Uuid
+  organizationId      String      @map("organization_id") @db.Uuid
+  
+  // References
+  workOrderId         String      @map("work_order_id") @db.Uuid
+  operationId         String      @map("operation_id") @db.Uuid
+  laborEntryId        String?     @map("labor_entry_id") @db.Uuid
+  
+  // Scrap Info
+  quantity            Int
+  reasonCode          String      @map("reason_code") @db.VarChar(50)
+  reasonDescription   String?     @map("reason_description") @db.Text
+  
+  // Analysis
+  rootCause           String?     @map("root_cause") @db.Text
+  correctiveAction    String?     @map("corrective_action") @db.Text
+  preventiveAction    String?     @map("preventive_action") @db.Text
+  
+  // Costs
+  materialCost        Decimal?    @map("material_cost") @db.Decimal(12, 2)
+  laborCost           Decimal?    @map("labor_cost") @db.Decimal(12, 2)
+  overheadCost        Decimal?    @map("overhead_cost") @db.Decimal(12, 2)
+  totalCost           Decimal?    @map("total_cost") @db.Decimal(12, 2)
+  
+  // NCR Reference
+  ncrId               String?     @map("ncr_id") @db.Uuid
+  ncrNumber           String?     @map("ncr_number") @db.VarChar(50)
+  
+  // Photos
+  photoUrls           String[]    @map("photo_urls")
+  
+  // Audit
+  reportedBy          String      @map("reported_by") @db.Uuid
+  reportedAt          DateTime    @map("reported_at") @db.Timestamptz
+  reviewedBy          String?     @map("reviewed_by") @db.Uuid
+  reviewedAt          DateTime?   @map("reviewed_at") @db.Timestamptz
+  
+  createdAt           DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workOrder           WorkOrder    @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  operation           WorkOrderOperation @relation(fields: [operationId], references: [id])
+  laborEntry          LaborEntry?  @relation(fields: [laborEntryId], references: [id])
+  reporter            User         @relation("ScrapReporter", fields: [reportedBy], references: [id])
+  reviewer            User?        @relation("ScrapReviewer", fields: [reviewedBy], references: [id])
+
+  @@index([organizationId])
+  @@index([workOrderId])
+  @@index([operationId])
+  @@index([reasonCode])
+  @@index([reportedAt])
+  @@map("scrap_record")
+  @@schema("public")
+}
+
+// =============================================================================
+// PHASE 4 MODELS - PRODUCTION SCHEDULING
+// =============================================================================
+
+model ProductionSchedule {
+  id                  String     @id @default(uuid()) @db.Uuid
+  organizationId      String     @map("organization_id") @db.Uuid
+  facilityId          String     @map("facility_id") @db.Uuid
+  
+  // Assignment
+  machineId           String     @map("machine_id") @db.Uuid
+  operationId         String     @map("operation_id") @db.Uuid
+  workOrderId         String     @map("work_order_id") @db.Uuid
+  
+  // Schedule
+  scheduledStart      DateTime   @map("scheduled_start") @db.Timestamptz
+  scheduledEnd        DateTime   @map("scheduled_end") @db.Timestamptz
+  
+  // Time Breakdown
+  setupMinutes        Int?       @map("setup_minutes")
+  runMinutes          Int?       @map("run_minutes")
+  teardownMinutes     Int?       @map("teardown_minutes")
+  
+  // Priority
+  priority            Int        @default(0)
+  sequenceNumber      Int?       @map("sequence_number")
+  
+  // Lock Status
+  isLocked            Boolean    @default(false) @map("is_locked")
+  lockedBy            String?    @map("locked_by") @db.Uuid
+  lockedAt            DateTime?  @map("locked_at") @db.Timestamptz
+  lockReason          String?    @map("lock_reason") @db.VarChar(200)
+  
+  // Execution Status
+  isStarted           Boolean    @default(false) @map("is_started")
+  isCompleted         Boolean    @default(false) @map("is_completed")
+  actualStart         DateTime?  @map("actual_start") @db.Timestamptz
+  actualEnd           DateTime?  @map("actual_end") @db.Timestamptz
+  
+  // Conflict Detection
+  hasConflict         Boolean    @default(false) @map("has_conflict")
+  conflictReason      String?    @map("conflict_reason") @db.VarChar(200)
+  
+  // Metadata
+  metadata            Json       @default("{}") @db.JsonB
+  
+  // Audit
+  scheduledBy         String?    @map("scheduled_by") @db.Uuid
+  createdAt           DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  facility            Facility     @relation(fields: [facilityId], references: [id])
+  machine             Machine      @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  operation           WorkOrderOperation @relation(fields: [operationId], references: [id], onDelete: Cascade)
+  workOrder           WorkOrder    @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  scheduler           User?        @relation("ScheduleCreator", fields: [scheduledBy], references: [id])
+  locker              User?        @relation("ScheduleLocker", fields: [lockedBy], references: [id])
+
+  @@index([organizationId])
+  @@index([facilityId])
+  @@index([machineId])
+  @@index([operationId])
+  @@index([scheduledStart])
+  @@index([isLocked])
+  @@map("production_schedule")
+  @@schema("public")
+}
+
+// =============================================================================
+// PHASE 5 ENUMS - QUALITY CONTROL
+// =============================================================================
+
+enum InspectionType {
+  RECEIVING
+  IN_PROCESS
+  FINAL
+  FIRST_PIECE
+  PERIODIC
+  CUSTOMER_RETURN
+
+  @@schema("public")
+}
+
+enum InspectionStatus {
+  PENDING
+  IN_PROGRESS
+  PASSED
+  FAILED
+  CONDITIONALLY_PASSED
+  CANCELLED
+
+  @@schema("public")
+}
+
+enum InspectionMethod {
+  VISUAL
+  DIMENSIONAL
+  FUNCTIONAL
+  DESTRUCTIVE
+  NON_DESTRUCTIVE
+  STATISTICAL
+
+  @@schema("public")
+}
+
+enum NCRStatus {
+  OPEN
+  UNDER_REVIEW
+  DISPOSITION_PENDING
+  IN_REWORK
+  AWAITING_MRB
+  CLOSED
+  CANCELLED
+
+  @@schema("public")
+}
+
+enum NCRDisposition {
+  USE_AS_IS
+  REWORK
+  REPAIR
+  SCRAP
+  RETURN_TO_VENDOR
+  DEVIATE
+
+  @@schema("public")
+}
+
+enum NCRSeverity {
+  MINOR
+  MAJOR
+  CRITICAL
+
+  @@schema("public")
+}
+
+enum CAPAType {
+  CORRECTIVE
+  PREVENTIVE
+  BOTH
+
+  @@schema("public")
+}
+
+enum CAPAStatus {
+  DRAFT
+  OPEN
+  IN_PROGRESS
+  VERIFICATION
+  CLOSED
+  CANCELLED
+
+  @@schema("public")
+}
+
+// =============================================================================
+// PHASE 5 ENUMS - FINISHING
+// =============================================================================
+
+enum FinishType {
+  ANODIZE
+  POWDER_COAT
+  PAINT
+  PLATING
+  PASSIVATION
+  HEAT_TREAT
+  TUMBLE
+  BEAD_BLAST
+  CHEMICAL_FILM
+  NONE
+
+  @@schema("public")
+}
+
+enum FinishStatus {
+  PENDING
+  IN_QUEUE
+  IN_PROCESS
+  CURING
+  COMPLETE
+  FAILED
+  ON_HOLD
+
+  @@schema("public")
+}
+
+// =============================================================================
+// PHASE 5 ENUMS - PACKAGING
+// =============================================================================
+
+enum PackageType {
+  BOX
+  CRATE
+  PALLET
+  ENVELOPE
+  TUBE
+  CUSTOM
+  BULK
+
+  @@schema("public")
+}
+
+enum PackageStatus {
+  OPEN
+  SEALED
+  LABELED
+  STAGED
+  SHIPPED
+
+  @@schema("public")
+}
+
+// =============================================================================
+// PHASE 5 ENUMS - SHIPPING
+// =============================================================================
+
+enum ShipmentStatus {
+  DRAFT
+  PENDING_PICKUP
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  EXCEPTION
+  RETURNED
+  CANCELLED
+
+  @@schema("public")
+}
+
+enum ShipmentType {
+  STANDARD
+  EXPEDITED
+  OVERNIGHT
+  FREIGHT
+  LTL
+  WILL_CALL
+  COURIER
+
+  @@schema("public")
+}
+
+enum CarrierType {
+  PARCEL
+  LTL
+  FTL
+  COURIER
+  WILL_CALL
+
+  @@schema("public")
+}
+
+// =============================================================================
+// PHASE 5 MODELS - QUALITY CONTROL
+// =============================================================================
+
+model QualityInspection {
+  id                  String             @id @default(uuid()) @db.Uuid
+  organizationId      String             @map("organization_id") @db.Uuid
+  facilityId          String             @map("facility_id") @db.Uuid
+  
+  // Identification
+  inspectionNumber    String             @map("inspection_number") @db.VarChar(50)
+  
+  // Type & Status
+  inspectionType      InspectionType     @map("inspection_type")
+  status              InspectionStatus   @default(PENDING)
+  
+  // What's being inspected
+  partId              String?            @map("part_id") @db.Uuid
+  partRevisionId      String?            @map("part_revision_id") @db.Uuid
+  workOrderId         String?            @map("work_order_id") @db.Uuid
+  operationId         String?            @map("operation_id") @db.Uuid
+  lotNumber           String?            @map("lot_number") @db.VarChar(100)
+  
+  // Quantities
+  quantityInspected   Int                @map("quantity_inspected")
+  quantityAccepted    Int                @default(0) @map("quantity_accepted")
+  quantityRejected    Int                @default(0) @map("quantity_rejected")
+  sampleSize          Int?               @map("sample_size")
+  
+  // Inspection Plan
+  inspectionPlanId    String?            @map("inspection_plan_id") @db.Uuid
+  method              InspectionMethod?
+  
+  // Equipment
+  equipmentUsed       Json               @default("[]") @map("equipment_used") @db.JsonB
+  
+  // Schedule
+  scheduledDate       DateTime?          @map("scheduled_date") @db.Date
+  startedAt           DateTime?          @map("started_at") @db.Timestamptz
+  completedAt         DateTime?          @map("completed_at") @db.Timestamptz
+  
+  // Results
+  overallResult       String?            @map("overall_result") @db.VarChar(50)
+  notes               String?            @db.Text
+  defectSummary       Json               @default("{}") @map("defect_summary") @db.JsonB
+  
+  // Attachments
+  photoUrls           String[]           @default([]) @map("photo_urls")
+  documentUrls        String[]           @default([]) @map("document_urls")
+  
+  // Metadata
+  metadata            Json               @default("{}") @db.JsonB
+  
+  // Audit
+  inspectorId         String?            @map("inspector_id") @db.Uuid
+  approvedById        String?            @map("approved_by_id") @db.Uuid
+  approvedAt          DateTime?          @map("approved_at") @db.Timestamptz
+  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  facility            Facility           @relation(fields: [facilityId], references: [id])
+  part                Part?              @relation(fields: [partId], references: [id])
+  partRevision        PartRevision?      @relation(fields: [partRevisionId], references: [id])
+  workOrder           WorkOrder?         @relation(fields: [workOrderId], references: [id])
+  operation           WorkOrderOperation? @relation(fields: [operationId], references: [id])
+  inspector           User?              @relation("InspectionInspector", fields: [inspectorId], references: [id])
+  approver            User?              @relation("InspectionApprover", fields: [approvedById], references: [id])
+  results             InspectionResult[]
+  ncrs                NonConformanceReport[]
+
+  @@unique([organizationId, inspectionNumber])
+  @@index([organizationId])
+  @@index([facilityId])
+  @@index([partId])
+  @@index([workOrderId])
+  @@index([status])
+  @@index([inspectionType])
+  @@map("quality_inspection")
+  @@schema("public")
+}
+
+model InspectionResult {
+  id                  String             @id @default(uuid()) @db.Uuid
+  inspectionId        String             @map("inspection_id") @db.Uuid
+  
+  // Characteristic
+  characteristicName  String             @map("characteristic_name") @db.VarChar(200)
+  characteristicType  String?            @map("characteristic_type") @db.VarChar(50)
+  specification       String?            @db.VarChar(200)
+  
+  // Tolerances
+  nominal             Decimal?           @db.Decimal(15, 6)
+  upperLimit          Decimal?           @map("upper_limit") @db.Decimal(15, 6)
+  lowerLimit          Decimal?           @map("lower_limit") @db.Decimal(15, 6)
+  
+  // Measured
+  measuredValue       Decimal?           @map("measured_value") @db.Decimal(15, 6)
+  measuredText        String?            @map("measured_text") @db.VarChar(200)
+  unit                String?            @db.VarChar(20)
+  
+  // Result
+  isPass              Boolean            @default(true) @map("is_pass")
+  deviation           Decimal?           @db.Decimal(15, 6)
+  
+  // Sample Info
+  sampleNumber        Int?               @map("sample_number")
+  serialNumber        String?            @map("serial_number") @db.VarChar(100)
+  
+  // Notes
+  notes               String?            @db.Text
+  
+  // Measurement Info
+  measuredAt          DateTime?          @map("measured_at") @db.Timestamptz
+  measuredById        String?            @map("measured_by_id") @db.Uuid
+  
+  // Metadata
+  metadata            Json               @default("{}") @db.JsonB
+  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  inspection          QualityInspection  @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  measuredBy          User?              @relation(fields: [measuredById], references: [id])
+
+  @@index([inspectionId])
+  @@index([isPass])
+  @@map("inspection_result")
+  @@schema("public")
+}
+
+model NonConformanceReport {
+  id                  String             @id @default(uuid()) @db.Uuid
+  organizationId      String             @map("organization_id") @db.Uuid
+  facilityId          String             @map("facility_id") @db.Uuid
+  
+  // Identification
+  ncrNumber           String             @map("ncr_number") @db.VarChar(50)
+  title               String             @db.VarChar(200)
+  
+  // Status & Severity
+  status              NCRStatus          @default(OPEN)
+  severity            NCRSeverity        @default(MINOR)
+  
+  // Source
+  sourceType          String?            @map("source_type") @db.VarChar(50) // INSPECTION, PRODUCTION, CUSTOMER
+  inspectionId        String?            @map("inspection_id") @db.Uuid
+  workOrderId         String?            @map("work_order_id") @db.Uuid
+  operationId         String?            @map("operation_id") @db.Uuid
+  customerId          String?            @map("customer_id") @db.Uuid
+  
+  // What's affected
+  partId              String?            @map("part_id") @db.Uuid
+  partRevisionId      String?            @map("part_revision_id") @db.Uuid
+  lotNumber           String?            @map("lot_number") @db.VarChar(100)
+  serialNumbers       String[]           @default([]) @map("serial_numbers")
+  
+  // Quantities
+  quantityAffected    Int                @map("quantity_affected")
+  quantityOnHold      Int                @default(0) @map("quantity_on_hold")
+  
+  // Description
+  description         String             @db.Text
+  rootCause           String?            @map("root_cause") @db.Text
+  containmentAction   String?            @map("containment_action") @db.Text
+  
+  // Disposition
+  disposition         NCRDisposition?
+  dispositionNotes    String?            @map("disposition_notes") @db.Text
+  dispositionById     String?            @map("disposition_by_id") @db.Uuid
+  dispositionAt       DateTime?          @map("disposition_at") @db.Timestamptz
+  
+  // MRB (Material Review Board)
+  requiresMRB         Boolean            @default(false) @map("requires_mrb")
+  mrbDate             DateTime?          @map("mrb_date") @db.Date
+  mrbDecision         String?            @map("mrb_decision") @db.Text
+  mrbAttendees        Json               @default("[]") @map("mrb_attendees") @db.JsonB
+  
+  // Cost Impact
+  laborCost           Decimal?           @map("labor_cost") @db.Decimal(12, 2)
+  materialCost        Decimal?           @map("material_cost") @db.Decimal(12, 2)
+  scrapCost           Decimal?           @map("scrap_cost") @db.Decimal(12, 2)
+  totalCost           Decimal?           @map("total_cost") @db.Decimal(12, 2)
+  
+  // Attachments
+  photoUrls           String[]           @default([]) @map("photo_urls")
+  documentUrls        String[]           @default([]) @map("document_urls")
+  
+  // Due Dates
+  targetCloseDate     DateTime?          @map("target_close_date") @db.Date
+  closedAt            DateTime?          @map("closed_at") @db.Timestamptz
+  
+  // Metadata
+  metadata            Json               @default("{}") @db.JsonB
+  
+  // Audit
+  reportedById        String             @map("reported_by_id") @db.Uuid
+  assignedToId        String?            @map("assigned_to_id") @db.Uuid
+  closedById          String?            @map("closed_by_id") @db.Uuid
+  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  facility            Facility           @relation(fields: [facilityId], references: [id])
+  inspection          QualityInspection? @relation(fields: [inspectionId], references: [id])
+  workOrder           WorkOrder?         @relation(fields: [workOrderId], references: [id])
+  operation           WorkOrderOperation? @relation(fields: [operationId], references: [id])
+  customer            Customer?          @relation(fields: [customerId], references: [id])
+  part                Part?              @relation(fields: [partId], references: [id])
+  partRevision        PartRevision?      @relation(fields: [partRevisionId], references: [id])
+  reportedBy          User               @relation("NCRReporter", fields: [reportedById], references: [id])
+  assignedTo          User?              @relation("NCRAssignee", fields: [assignedToId], references: [id])
+  dispositionBy       User?              @relation("NCRDisposition", fields: [dispositionById], references: [id])
+  closedBy            User?              @relation("NCRCloser", fields: [closedById], references: [id])
+  capas               CorrectiveAction[]
+
+  @@unique([organizationId, ncrNumber])
+  @@index([organizationId])
+  @@index([facilityId])
+  @@index([status])
+  @@index([severity])
+  @@index([partId])
+  @@index([workOrderId])
+  @@map("non_conformance_report")
+  @@schema("public")
+}
+
+model CorrectiveAction {
+  id                  String             @id @default(uuid()) @db.Uuid
+  organizationId      String             @map("organization_id") @db.Uuid
+  
+  // Identification
+  capaNumber          String             @map("capa_number") @db.VarChar(50)
+  title               String             @db.VarChar(200)
+  
+  // Type & Status
+  type                CAPAType
+  status              CAPAStatus         @default(DRAFT)
+  
+  // Source
+  ncrId               String?            @map("ncr_id") @db.Uuid
+  sourceReference     String?            @map("source_reference") @db.VarChar(100)
+  
+  // Problem Statement
+  problemDescription  String             @map("problem_description") @db.Text
+  rootCauseAnalysis   String?            @map("root_cause_analysis") @db.Text
+  
+  // Actions
+  immediateAction     String?            @map("immediate_action") @db.Text
+  correctiveAction    String?            @map("corrective_action") @db.Text
+  preventiveAction    String?            @map("preventive_action") @db.Text
+  
+  // Verification
+  verificationMethod  String?            @map("verification_method") @db.Text
+  verificationResult  String?            @map("verification_result") @db.Text
+  verifiedById        String?            @map("verified_by_id") @db.Uuid
+  verifiedAt          DateTime?          @map("verified_at") @db.Timestamptz
+  
+  // Effectiveness
+  effectivenessReview String?            @map("effectiveness_review") @db.Text
+  isEffective         Boolean?           @map("is_effective")
+  
+  // Dates
+  targetDate          DateTime?          @map("target_date") @db.Date
+  completedAt         DateTime?          @map("completed_at") @db.Timestamptz
+  closedAt            DateTime?          @map("closed_at") @db.Timestamptz
+  
+  // Attachments
+  documentUrls        String[]           @default([]) @map("document_urls")
+  
+  // Metadata
+  metadata            Json               @default("{}") @db.JsonB
+  
+  // Audit
+  initiatedById       String             @map("initiated_by_id") @db.Uuid
+  assignedToId        String?            @map("assigned_to_id") @db.Uuid
+  closedById          String?            @map("closed_by_id") @db.Uuid
+  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  ncr                 NonConformanceReport? @relation(fields: [ncrId], references: [id])
+  initiatedBy         User               @relation("CAPAInitiator", fields: [initiatedById], references: [id])
+  assignedTo          User?              @relation("CAPAAssignee", fields: [assignedToId], references: [id])
+  verifiedBy          User?              @relation("CAPAVerifier", fields: [verifiedById], references: [id])
+  closedBy            User?              @relation("CAPACloser", fields: [closedById], references: [id])
+
+  @@unique([organizationId, capaNumber])
+  @@index([organizationId])
+  @@index([status])
+  @@index([type])
+  @@index([ncrId])
+  @@map("corrective_action")
+  @@schema("public")
+}
+
+// =============================================================================
+// PHASE 5 MODELS - FINISHING
+// =============================================================================
+
+model FinishingProcess {
+  id                  String             @id @default(uuid()) @db.Uuid
+  organizationId      String             @map("organization_id") @db.Uuid
+  
+  // Identification
+  code                String             @db.VarChar(50)
+  name                String             @db.VarChar(200)
+  description         String?            @db.Text
+  
+  // Type
+  finishType          FinishType         @map("finish_type")
+  
+  // Process Parameters
+  isOutsourced        Boolean            @default(false) @map("is_outsourced")
+  vendorId            String?            @map("vendor_id") @db.Uuid
+  leadTimeDays        Int?               @map("lead_time_days")
+  
+  // Pricing
+  basePrice           Decimal?           @map("base_price") @db.Decimal(12, 2)
+  pricePerSqFt        Decimal?           @map("price_per_sq_ft") @db.Decimal(10, 4)
+  pricePerUnit        Decimal?           @map("price_per_unit") @db.Decimal(10, 4)
+  minimumCharge       Decimal?           @map("minimum_charge") @db.Decimal(12, 2)
+  
+  // Specifications
+  specifications      Json               @default("{}") @db.JsonB
+  colorOptions        String[]           @default([]) @map("color_options")
+  
+  // Quality
+  inspectionRequired  Boolean            @default(true) @map("inspection_required")
+  certificationRequired Boolean          @default(false) @map("certification_required")
+  
+  // Status
+  isActive            Boolean            @default(true) @map("is_active")
+  
+  // Metadata
+  metadata            Json               @default("{}") @db.JsonB
+  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  finishingJobs       FinishingJob[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@index([finishType])
+  @@map("finishing_process")
+  @@schema("public")
+}
+
+model FinishingJob {
+  id                  String             @id @default(uuid()) @db.Uuid
+  organizationId      String             @map("organization_id") @db.Uuid
+  facilityId          String             @map("facility_id") @db.Uuid
+  
+  // Identification
+  jobNumber           String             @map("job_number") @db.VarChar(50)
+  
+  // Source
+  workOrderId         String?            @map("work_order_id") @db.Uuid
+  orderLineId         String?            @map("order_line_id") @db.Uuid
+  
+  // What's being finished
+  partId              String             @map("part_id") @db.Uuid
+  processId           String             @map("process_id") @db.Uuid
+  
+  // Quantities
+  quantity            Int
+  quantityComplete    Int                @default(0) @map("quantity_complete")
+  quantityRejected    Int                @default(0) @map("quantity_rejected")
+  
+  // Specifications
+  colorCode           String?            @map("color_code") @db.VarChar(50)
+  colorName           String?            @map("color_name") @db.VarChar(100)
+  thickness           String?            @db.VarChar(50)
+  specialInstructions String?            @map("special_instructions") @db.Text
+  
+  // Status
+  status              FinishStatus       @default(PENDING)
+  priority            Int                @default(0)
+  
+  // Scheduling
+  scheduledDate       DateTime?          @map("scheduled_date") @db.Date
+  startedAt           DateTime?          @map("started_at") @db.Timestamptz
+  completedAt         DateTime?          @map("completed_at") @db.Timestamptz
+  
+  // Outsourcing
+  isOutsourced        Boolean            @default(false) @map("is_outsourced")
+  vendorId            String?            @map("vendor_id") @db.Uuid
+  vendorPONumber      String?            @map("vendor_po_number") @db.VarChar(100)
+  shippedToVendorAt   DateTime?          @map("shipped_to_vendor_at") @db.Timestamptz
+  receivedFromVendorAt DateTime?         @map("received_from_vendor_at") @db.Timestamptz
+  
+  // Costing
+  estimatedCost       Decimal?           @map("estimated_cost") @db.Decimal(12, 2)
+  actualCost          Decimal?           @map("actual_cost") @db.Decimal(12, 2)
+  
+  // Quality
+  lotNumber           String?            @map("lot_number") @db.VarChar(100)
+  batchNumber         String?            @map("batch_number") @db.VarChar(100)
+  inspectionRequired  Boolean            @default(true) @map("inspection_required")
+  inspectionPassed    Boolean?           @map("inspection_passed")
+  
+  // Notes
+  notes               String?            @db.Text
+  
+  // Metadata
+  metadata            Json               @default("{}") @db.JsonB
+  
+  // Audit
+  createdById         String?            @map("created_by_id") @db.Uuid
+  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  facility            Facility           @relation(fields: [facilityId], references: [id])
+  workOrder           WorkOrder?         @relation(fields: [workOrderId], references: [id])
+  orderLine           OrderLine?         @relation(fields: [orderLineId], references: [id])
+  part                Part               @relation(fields: [partId], references: [id])
+  process             FinishingProcess   @relation(fields: [processId], references: [id])
+  createdBy           User?              @relation(fields: [createdById], references: [id])
+
+  @@unique([organizationId, jobNumber])
+  @@index([organizationId])
+  @@index([facilityId])
+  @@index([workOrderId])
+  @@index([partId])
+  @@index([status])
+  @@map("finishing_job")
+  @@schema("public")
+}
+
+// =============================================================================
+// PHASE 5 MODELS - PACKAGING
+// =============================================================================
+
+model PackageSpecification {
+  id                  String             @id @default(uuid()) @db.Uuid
+  organizationId      String             @map("organization_id") @db.Uuid
+  
+  // Identification
+  code                String             @db.VarChar(50)
+  name                String             @db.VarChar(200)
+  description         String?            @db.Text
+  
+  // Type
+  packageType         PackageType        @map("package_type")
+  
+  // Dimensions
+  lengthInches        Decimal?           @map("length_inches") @db.Decimal(8, 2)
+  widthInches         Decimal?           @map("width_inches") @db.Decimal(8, 2)
+  heightInches        Decimal?           @map("height_inches") @db.Decimal(8, 2)
+  maxWeightLbs        Decimal?           @map("max_weight_lbs") @db.Decimal(10, 2)
+  tareWeightLbs       Decimal?           @map("tare_weight_lbs") @db.Decimal(8, 2)
+  
+  // Cost
+  unitCost            Decimal?           @map("unit_cost") @db.Decimal(10, 2)
+  
+  // Materials & Handling
+  materialType        String?            @map("material_type") @db.VarChar(100)
+  requiresDunnage     Boolean            @default(false) @map("requires_dunnage")
+  dunnageType         String?            @map("dunnage_type") @db.VarChar(100)
+  isReturnable        Boolean            @default(false) @map("is_returnable")
+  
+  // Specifications
+  specifications      Json               @default("{}") @db.JsonB
+  
+  // Status
+  isActive            Boolean            @default(true) @map("is_active")
+  
+  // Metadata
+  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  packages            Package[]
+  partPackaging       PartPackaging[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@index([packageType])
+  @@map("package_specification")
+  @@schema("public")
+}
+
+model PartPackaging {
+  id                  String             @id @default(uuid()) @db.Uuid
+  organizationId      String             @map("organization_id") @db.Uuid
+  
+  // Part
+  partId              String             @map("part_id") @db.Uuid
+  customerId          String?            @map("customer_id") @db.Uuid
+  
+  // Package Spec
+  packageSpecId       String             @map("package_spec_id") @db.Uuid
+  
+  // Quantities
+  quantityPerPackage  Int                @map("quantity_per_package")
+  isDefault           Boolean            @default(false) @map("is_default")
+  
+  // Special Instructions
+  packingInstructions String?            @map("packing_instructions") @db.Text
+  labelingRequired    Json               @default("{}") @map("labeling_required") @db.JsonB
+  
+  // Metadata
+  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  part                Part               @relation(fields: [partId], references: [id])
+  customer            Customer?          @relation(fields: [customerId], references: [id])
+  packageSpec         PackageSpecification @relation(fields: [packageSpecId], references: [id])
+
+  @@index([organizationId])
+  @@index([partId])
+  @@index([customerId])
+  @@map("part_packaging")
+  @@schema("public")
+}
+
+model Package {
+  id                  String             @id @default(uuid()) @db.Uuid
+  organizationId      String             @map("organization_id") @db.Uuid
+  facilityId          String             @map("facility_id") @db.Uuid
+  
+  // Identification
+  packageNumber       String             @map("package_number") @db.VarChar(50)
+  barcode             String?            @db.VarChar(100)
+  
+  // Source
+  orderId             String?            @map("order_id") @db.Uuid
+  shipmentId          String?            @map("shipment_id") @db.Uuid
+  
+  // Package Spec
+  packageSpecId       String?            @map("package_spec_id") @db.Uuid
+  
+  // Status
+  status              PackageStatus      @default(OPEN)
+  
+  // Dimensions (actual)
+  lengthInches        Decimal?           @map("length_inches") @db.Decimal(8, 2)
+  widthInches         Decimal?           @map("width_inches") @db.Decimal(8, 2)
+  heightInches        Decimal?           @map("height_inches") @db.Decimal(8, 2)
+  weightLbs           Decimal?           @map("weight_lbs") @db.Decimal(10, 2)
+  dimWeightLbs        Decimal?           @map("dim_weight_lbs") @db.Decimal(10, 2)
+  
+  // Tracking
+  trackingNumber      String?            @map("tracking_number") @db.VarChar(100)
+  
+  // Timestamps
+  sealedAt            DateTime?          @map("sealed_at") @db.Timestamptz
+  labeledAt           DateTime?          @map("labeled_at") @db.Timestamptz
+  
+  // Notes
+  notes               String?            @db.Text
+  
+  // Metadata
+  metadata            Json               @default("{}") @db.JsonB
+  
+  // Audit
+  packedById          String?            @map("packed_by_id") @db.Uuid
+  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  facility            Facility           @relation(fields: [facilityId], references: [id])
+  order               Order?             @relation(fields: [orderId], references: [id])
+  shipment            Shipment?          @relation(fields: [shipmentId], references: [id])
+  packageSpec         PackageSpecification? @relation(fields: [packageSpecId], references: [id])
+  packedBy            User?              @relation(fields: [packedById], references: [id])
+  contents            PackageContent[]
+
+  @@unique([organizationId, packageNumber])
+  @@index([organizationId])
+  @@index([facilityId])
+  @@index([orderId])
+  @@index([shipmentId])
+  @@index([status])
+  @@map("package")
+  @@schema("public")
+}
+
+model PackageContent {
+  id                  String             @id @default(uuid()) @db.Uuid
+  packageId           String             @map("package_id") @db.Uuid
+  
+  // Content
+  partId              String             @map("part_id") @db.Uuid
+  orderLineId         String?            @map("order_line_id") @db.Uuid
+  workOrderId         String?            @map("work_order_id") @db.Uuid
+  
+  // Quantities
+  quantity            Int
+  
+  // Identification
+  lotNumber           String?            @map("lot_number") @db.VarChar(100)
+  serialNumbers       String[]           @default([]) @map("serial_numbers")
+  
+  // Metadata
+  metadata            Json               @default("{}") @db.JsonB
+  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  package             Package            @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  part                Part               @relation(fields: [partId], references: [id])
+  orderLine           OrderLine?         @relation(fields: [orderLineId], references: [id])
+  workOrder           WorkOrder?         @relation(fields: [workOrderId], references: [id])
+
+  @@index([packageId])
+  @@index([partId])
+  @@map("package_content")
+  @@schema("public")
+}
+
+// =============================================================================
+// PHASE 5 MODELS - SHIPPING
+// =============================================================================
+
+model Carrier {
+  id                  String             @id @default(uuid()) @db.Uuid
+  organizationId      String             @map("organization_id") @db.Uuid
+  
+  // Identification
+  code                String             @db.VarChar(20)
+  name                String             @db.VarChar(200)
+  
+  // Type
+  carrierType         CarrierType        @map("carrier_type")
+  
+  // API Integration
+  apiEnabled          Boolean            @default(false) @map("api_enabled")
+  accountNumber       String?            @map("account_number") @db.VarChar(100)
+  apiKey              String?            @map("api_key") @db.VarChar(500)
+  apiSecret           String?            @map("api_secret") @db.VarChar(500)
+  apiEndpoint         String?            @map("api_endpoint") @db.VarChar(500)
+  
+  // Shipping Options
+  trackingUrlTemplate String?            @map("tracking_url_template") @db.VarChar(500)
+  
+  // Contact
+  contactName         String?            @map("contact_name") @db.VarChar(200)
+  phone               String?            @db.VarChar(50)
+  email               String?            @db.VarChar(255)
+  
+  // Status
+  isActive            Boolean            @default(true) @map("is_active")
+  
+  // Metadata
+  metadata            Json               @default("{}") @db.JsonB
+  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  services            CarrierService[]
+  shipments           Shipment[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@map("carrier")
+  @@schema("public")
+}
+
+model CarrierService {
+  id                  String             @id @default(uuid()) @db.Uuid
+  carrierId           String             @map("carrier_id") @db.Uuid
+  
+  // Identification
+  code                String             @db.VarChar(50)
+  name                String             @db.VarChar(200)
+  description         String?            @db.Text
+  
+  // Service Level
+  serviceType         ShipmentType       @map("service_type")
+  transitDays         Int?               @map("transit_days")
+  
+  // Dimensional Limits
+  maxWeightLbs        Decimal?           @map("max_weight_lbs") @db.Decimal(10, 2)
+  maxLengthInches     Decimal?           @map("max_length_inches") @db.Decimal(8, 2)
+  
+  // Pricing
+  baseRate            Decimal?           @map("base_rate") @db.Decimal(10, 2)
+  fuelSurchargePercent Decimal?          @map("fuel_surcharge_percent") @db.Decimal(5, 2)
+  
+  // Status
+  isActive            Boolean            @default(true) @map("is_active")
+  
+  // Metadata
+  metadata            Json               @default("{}") @db.JsonB
+  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  carrier             Carrier            @relation(fields: [carrierId], references: [id], onDelete: Cascade)
+  shipments           Shipment[]
+
+  @@unique([carrierId, code])
+  @@index([carrierId])
+  @@map("carrier_service")
+  @@schema("public")
+}
+
+model Shipment {
+  id                  String             @id @default(uuid()) @db.Uuid
+  organizationId      String             @map("organization_id") @db.Uuid
+  facilityId          String             @map("facility_id") @db.Uuid
+  
+  // Identification
+  shipmentNumber      String             @map("shipment_number") @db.VarChar(50)
+  
+  // Source
+  orderId             String?            @map("order_id") @db.Uuid
+  customerId          String             @map("customer_id") @db.Uuid
+  
+  // Carrier
+  carrierId           String?            @map("carrier_id") @db.Uuid
+  serviceId           String?            @map("service_id") @db.Uuid
+  
+  // Type & Status
+  shipmentType        ShipmentType       @default(STANDARD) @map("shipment_type")
+  status              ShipmentStatus     @default(DRAFT)
+  
+  // Tracking
+  trackingNumber      String?            @map("tracking_number") @db.VarChar(100)
+  masterTrackingNumber String?           @map("master_tracking_number") @db.VarChar(100)
+  proNumber           String?            @map("pro_number") @db.VarChar(100)
+  
+  // Ship From
+  shipFromName        String             @map("ship_from_name") @db.VarChar(200)
+  shipFromAddress1    String             @map("ship_from_address1") @db.VarChar(255)
+  shipFromAddress2    String?            @map("ship_from_address2") @db.VarChar(255)
+  shipFromCity        String             @map("ship_from_city") @db.VarChar(100)
+  shipFromState       String             @map("ship_from_state") @db.VarChar(100)
+  shipFromPostalCode  String             @map("ship_from_postal_code") @db.VarChar(20)
+  shipFromCountry     String             @default("USA") @map("ship_from_country") @db.VarChar(3)
+  shipFromPhone       String?            @map("ship_from_phone") @db.VarChar(50)
+  
+  // Ship To
+  shipToName          String             @map("ship_to_name") @db.VarChar(200)
+  shipToCompany       String?            @map("ship_to_company") @db.VarChar(200)
+  shipToAddress1      String             @map("ship_to_address1") @db.VarChar(255)
+  shipToAddress2      String?            @map("ship_to_address2") @db.VarChar(255)
+  shipToCity          String             @map("ship_to_city") @db.VarChar(100)
+  shipToState         String             @map("ship_to_state") @db.VarChar(100)
+  shipToPostalCode    String             @map("ship_to_postal_code") @db.VarChar(20)
+  shipToCountry       String             @default("USA") @map("ship_to_country") @db.VarChar(3)
+  shipToPhone         String?            @map("ship_to_phone") @db.VarChar(50)
+  shipToEmail         String?            @map("ship_to_email") @db.VarChar(255)
+  
+  // Package Summary
+  packageCount        Int                @default(0) @map("package_count")
+  totalWeightLbs      Decimal?           @map("total_weight_lbs") @db.Decimal(12, 2)
+  
+  // Costs
+  freightCost         Decimal?           @map("freight_cost") @db.Decimal(12, 2)
+  insuranceCost       Decimal?           @map("insurance_cost") @db.Decimal(12, 2)
+  packagingCost       Decimal?           @map("packaging_cost") @db.Decimal(12, 2)
+  handlingCost        Decimal?           @map("handling_cost") @db.Decimal(12, 2)
+  totalCost           Decimal?           @map("total_cost") @db.Decimal(12, 2)
+  
+  // Billing
+  billTo              String?            @default("SHIPPER") @map("bill_to") @db.VarChar(50)
+  thirdPartyAccount   String?            @map("third_party_account") @db.VarChar(100)
+  
+  // Options
+  signatureRequired   Boolean            @default(false) @map("signature_required")
+  insuranceAmount     Decimal?           @map("insurance_amount") @db.Decimal(12, 2)
+  saturdayDelivery    Boolean            @default(false) @map("saturday_delivery")
+  holdForPickup       Boolean            @default(false) @map("hold_for_pickup")
+  
+  // Documents
+  labelUrl            String?            @map("label_url") @db.VarChar(500)
+  bolUrl              String?            @map("bol_url") @db.VarChar(500)
+  packingListUrl      String?            @map("packing_list_url") @db.VarChar(500)
+  commercialInvoiceUrl String?           @map("commercial_invoice_url") @db.VarChar(500)
+  
+  // Dates
+  requestedShipDate   DateTime?          @map("requested_ship_date") @db.Date
+  estimatedDelivery   DateTime?          @map("estimated_delivery") @db.Date
+  actualShipDate      DateTime?          @map("actual_ship_date") @db.Timestamptz
+  actualDelivery      DateTime?          @map("actual_delivery") @db.Timestamptz
+  
+  // Special Instructions
+  specialInstructions String?            @map("special_instructions") @db.Text
+  internalNotes       String?            @map("internal_notes") @db.Text
+  
+  // Metadata
+  metadata            Json               @default("{}") @db.JsonB
+  
+  // Audit
+  createdById         String?            @map("created_by_id") @db.Uuid
+  shippedById         String?            @map("shipped_by_id") @db.Uuid
+  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  facility            Facility           @relation(fields: [facilityId], references: [id])
+  order               Order?             @relation(fields: [orderId], references: [id])
+  customer            Customer           @relation(fields: [customerId], references: [id])
+  carrier             Carrier?           @relation(fields: [carrierId], references: [id])
+  service             CarrierService?    @relation(fields: [serviceId], references: [id])
+  createdBy           User?              @relation("ShipmentCreator", fields: [createdById], references: [id])
+  shippedBy           User?              @relation("ShipmentShipper", fields: [shippedById], references: [id])
+  packages            Package[]
+  trackingEvents      TrackingEvent[]
+
+  @@unique([organizationId, shipmentNumber])
+  @@index([organizationId])
+  @@index([facilityId])
+  @@index([orderId])
+  @@index([customerId])
+  @@index([status])
+  @@index([trackingNumber])
+  @@map("shipment")
+  @@schema("public")
+}
+
+model TrackingEvent {
+  id                  String             @id @default(uuid()) @db.Uuid
+  shipmentId          String             @map("shipment_id") @db.Uuid
+  
+  // Event
+  eventCode           String             @map("event_code") @db.VarChar(50)
+  eventDescription    String             @map("event_description") @db.VarChar(500)
+  eventTimestamp      DateTime           @map("event_timestamp") @db.Timestamptz
+  
+  // Location
+  city                String?            @db.VarChar(100)
+  state               String?            @db.VarChar(100)
+  postalCode          String?            @map("postal_code") @db.VarChar(20)
+  country             String?            @db.VarChar(3)
+  
+  // Signer (for delivery)
+  signedBy            String?            @map("signed_by") @db.VarChar(200)
+  
+  // Exception
+  isException         Boolean            @default(false) @map("is_exception")
+  exceptionCode       String?            @map("exception_code") @db.VarChar(50)
+  
+  // Source
+  sourceType          String?            @map("source_type") @db.VarChar(50) // API, MANUAL
+  rawData             Json?              @map("raw_data") @db.JsonB
+  
+  // Metadata
+  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  shipment            Shipment           @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  @@index([shipmentId])
+  @@index([eventTimestamp])
+  @@map("tracking_event")
+  @@schema("public")
+}

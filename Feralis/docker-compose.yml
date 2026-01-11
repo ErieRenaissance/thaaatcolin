@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # Frontend service
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    environment:
+      - VITE_API_URL=http://localhost:3000
+    depends_on:
+      - backend
+    networks:
+      - feralis-network
+    restart: unless-stopped
+
+  # Backend service (assuming it exists)
+  backend:
+    image: feralis-backend:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - feralis-network
+    restart: unless-stopped
+
+  # PostgreSQL database
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=feralis
+      - POSTGRES_USER=feralis
+      - POSTGRES_PASSWORD=feralis_password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - feralis-network
+    restart: unless-stopped
+
+  # Redis cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - feralis-network
+    restart: unless-stopped
+
+networks:
+  feralis-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
