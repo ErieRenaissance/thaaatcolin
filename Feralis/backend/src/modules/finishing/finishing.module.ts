@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { PrismaModule } from '../common/prisma/prisma.module';
-import { AuditModule } from './audit/audit.module';
+import { PrismaModule } from '../../common/prisma/prisma.module';
+import { AuditModule } from '../audit/audit.module';
 import { FinishingService } from './finishing/finishing.service';
 import { FinishingController } from './finishing/finishing.controller';
 
