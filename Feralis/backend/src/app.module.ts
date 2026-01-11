@@ -1,10 +1,20 @@
 // =============================================================================
 // FERALIS PLATFORM - APP MODULE
 // =============================================================================
+// Main application module integrating all platform features:
+// - Phase 1: Foundation & Authentication
+// - Phase 2: Customer & Order Management
+// - Phase 3: Production & Inventory
+// - Phase 4: Advanced Production
+// - Phase 5: Quality Control & Fulfillment
+// - Phase 6: Advanced Quoting System
+// - Phase 7: Analytics & Customer Portal
+// =============================================================================
 
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { BullModule } from '@nestjs/bull';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 
 // Configuration
@@ -19,7 +29,9 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { ThrottlerBehindProxyGuard } from './common/guards/throttler-behind-proxy.guard';
 
-// Modules
+// =============================================================================
+// PHASE 1: Foundation & Authentication Modules
+// =============================================================================
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
@@ -30,21 +42,46 @@ import { AuditModule } from './modules/audit/audit.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { FilesModule } from './modules/files/files.module';
 import { HealthModule } from './modules/health/health.module';
+
+// =============================================================================
+// PHASE 2: Customer & Order Management Modules
+// =============================================================================
 import { CustomersModule } from './modules/customers/customers.module';
 import { PartsModule } from './modules/parts/parts.module';
 import { QuotesModule } from './modules/quotes/quotes.module';
 import { OrdersModule } from './modules/orders/orders.module';
+
+// =============================================================================
+// PHASE 3-4: Production & Inventory Modules
+// =============================================================================
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { ProductionModule } from './modules/production/production.module';
-// Phase 5 Modules
+
+// =============================================================================
+// PHASE 5: Quality Control & Fulfillment Modules
+// =============================================================================
 import { QualityModule } from './modules/quality/quality.module';
 import { FinishingModule } from './modules/finishing/finishing.module';
 import { PackagingModule } from './modules/packaging/packaging.module';
 import { ShippingModule } from './modules/shipping/shipping.module';
 
+// =============================================================================
+// PHASE 6: Advanced Quoting System Modules
+// =============================================================================
+import { QuoteAnalysisModule } from './modules/quote-analysis/quote-analysis.module';
+
+// =============================================================================
+// PHASE 7: Analytics & Customer Portal Modules
+// =============================================================================
+import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { CustomerPortalModule } from './modules/customer-portal/portal.module';
+import { DashboardEnhancementsModule } from './modules/dashboard/dashboard-enhancements.module';
+
 @Module({
   imports: [
-    // Configuration
+    // =========================================================================
+    // CONFIGURATION
+    // =========================================================================
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
@@ -52,7 +89,9 @@ import { ShippingModule } from './modules/shipping/shipping.module';
       envFilePath: ['.env.local', '.env'],
     }),
 
-    // Rate limiting
+    // =========================================================================
+    // RATE LIMITING
+    // =========================================================================
     ThrottlerModule.forRoot([
       {
         name: 'short',
@@ -71,11 +110,39 @@ import { ShippingModule } from './modules/shipping/shipping.module';
       },
     ]),
 
-    // Infrastructure
+    // =========================================================================
+    // REDIS QUEUE PROCESSING (Bull)
+    // =========================================================================
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        redis: {
+          host: configService.get<string>('REDIS_HOST', 'localhost'),
+          port: configService.get<number>('REDIS_PORT', 6379),
+          password: configService.get<string>('REDIS_PASSWORD', undefined),
+        },
+        defaultJobOptions: {
+          removeOnComplete: 100,
+          removeOnFail: 50,
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 1000,
+          },
+        },
+      }),
+      inject: [ConfigService],
+    }),
+
+    // =========================================================================
+    // COMMON INFRASTRUCTURE
+    // =========================================================================
     PrismaModule,
     RedisModule,
 
-    // Feature Modules
+    // =========================================================================
+    // PHASE 1: Foundation & Authentication
+    // =========================================================================
     AuthModule,
     UsersModule,
     OrganizationsModule,
@@ -86,35 +153,65 @@ import { ShippingModule } from './modules/shipping/shipping.module';
     NotificationsModule,
     FilesModule,
     HealthModule,
+
+    // =========================================================================
+    // PHASE 2: Customer & Order Management
+    // =========================================================================
     CustomersModule,
     PartsModule,
     QuotesModule,
     OrdersModule,
+
+    // =========================================================================
+    // PHASE 3-4: Production & Inventory
+    // =========================================================================
     InventoryModule,
     ProductionModule,
-    // Phase 5
+
+    // =========================================================================
+    // PHASE 5: Quality Control & Fulfillment
+    // =========================================================================
     QualityModule,
     FinishingModule,
     PackagingModule,
     ShippingModule,
+
+    // =========================================================================
+    // PHASE 6: Advanced Quoting System
+    // =========================================================================
+    QuoteAnalysisModule,
+
+    // =========================================================================
+    // PHASE 7: Analytics & Customer Portal
+    // =========================================================================
+    AnalyticsModule,
+    CustomerPortalModule,
+    DashboardEnhancementsModule,
   ],
   providers: [
-    // Global exception filter
+    // =========================================================================
+    // GLOBAL EXCEPTION FILTER
+    // =========================================================================
     {
       provide: APP_FILTER,
       useClass: HttpExceptionFilter,
     },
-    // Global response transformer
+
+    // =========================================================================
+    // GLOBAL INTERCEPTORS
+    // =========================================================================
     {
       provide: APP_INTERCEPTOR,
       useClass: TransformInterceptor,
     },
-    // Global logging
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,
     },
-    // Global rate limiting
+
+    // =========================================================================
+    // GLOBAL GUARDS
+    // =========================================================================
     {
       provide: APP_GUARD,
       useClass: ThrottlerBehindProxyGuard,
