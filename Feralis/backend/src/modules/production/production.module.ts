@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { PrismaModule } from '../common/prisma/prisma.module';
-import { AuditModule } from './audit/audit.module';
+import { PrismaModule } from '../../common/prisma/prisma.module';
+import { AuditModule } from '../audit/audit.module';
 
 // Work Centers
 import { WorkCentersService } from './production/work-centers/work-centers.service';
@@ -23,7 +23,10 @@ import { SchedulingService } from './production/scheduling/scheduling.service';
 import { SchedulingController } from './production/scheduling/scheduling.controller';
 
 @Module({
-  imports: [PrismaModule, AuditModule],
+  imports: [
+    PrismaModule,
+    AuditModule,
+  ],
   controllers: [
     WorkCentersController,
     MachinesController,
