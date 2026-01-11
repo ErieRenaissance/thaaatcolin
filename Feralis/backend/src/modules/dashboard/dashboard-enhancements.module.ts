@@ -27,11 +27,13 @@ import { DashboardAggregatorService } from './services/dashboard-aggregator.serv
 import { DashboardEnhancementsController } from './controllers/dashboard-enhancements.controller';
 
 // Dependencies
-import { PrismaModule } from '../../prisma/prisma.module';
+import { PrismaModule } from '../../common/prisma/prisma.module';
+import { AuditModule } from '../audit/audit.module';
 
 @Module({
   imports: [
     PrismaModule,
+    AuditModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [DashboardEnhancementsController],
@@ -89,9 +91,9 @@ export class DashboardEnhancementsModule {}
  *    - Overload prediction
  *    - What-if scenarios
  * 
- * 6. Alert Management Center (DASH-AL-*)
- *    - Automatic alert classification
- *    - Priority scoring
- *    - Escalation workflows
- *    - Alert correlation
+ * 6. Alert Management Center (DASH-AM-*)
+ *    - Unified alert dashboard
+ *    - Priority-based routing
+ *    - Acknowledgment workflows
+ *    - Escalation management
  */
