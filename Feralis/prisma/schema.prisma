@@ -4291,3 +4291,836 @@ model AlertInstance {
 // Add to Facility model:
 //   kpiValues            KPIValue[]
 // =============================================================================
+
+
+// =============================================================================
+// FERALIS MANUFACTURING PLATFORM
+// Prisma Schema Additions - Customer Portal Module (Phase 7)
+// =============================================================================
+//
+// NOTE: Analytics models (ReportDefinition, ReportExecution, KPIDefinition,
+// KPIValue, Dashboard, DashboardWidget, AnalyticsAlert, AlertInstance) and
+// their associated enums already exist in your schema.prisma file.
+//
+// The following models should be ADDED to backend/prisma/schema.prisma
+// =============================================================================
+
+// =============================================================================
+// PHASE 7 MODELS - CUSTOMER PORTAL
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// CUSTOMER PORTAL ENUMS
+// -----------------------------------------------------------------------------
+
+enum PortalRole {
+  ADMIN
+  BUYER
+  ENGINEER
+  VIEWER
+
+  @@schema("public")
+}
+
+enum SessionStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+  LOGGED_OUT
+
+  @@schema("public")
+}
+
+enum RFQStatus {
+  DRAFT
+  SUBMITTED
+  PROCESSING
+  QUOTED
+  EXPIRED
+  CONVERTED
+  CANCELLED
+
+  @@schema("public")
+}
+
+enum ApprovalRequestType {
+  FAI
+  DEVIATION
+  CHANGE_ORDER
+  QUOTE
+  SAMPLE
+  DOCUMENT
+
+  @@schema("public")
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+  DELEGATED
+
+  @@schema("public")
+}
+
+enum MessagePriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+
+  @@schema("public")
+}
+
+enum SenderType {
+  CUSTOMER
+  INTERNAL
+  SYSTEM
+
+  @@schema("public")
+}
+
+enum DeliveryUrgency {
+  STANDARD
+  RUSH
+  CRITICAL
+
+  @@schema("public")
+}
+
+// -----------------------------------------------------------------------------
+// CUSTOMER PORTAL CONFIG
+// -----------------------------------------------------------------------------
+
+model CustomerPortalConfig {
+  id                      String   @id @default(uuid()) @db.Uuid
+  customerId              String   @unique @map("customer_id") @db.Uuid
+  organizationId          String   @map("organization_id") @db.Uuid
+
+  // Access Settings
+  isEnabled               Boolean  @default(true) @map("is_enabled")
+  accessLevel             String   @default("STANDARD") @map("access_level") @db.VarChar(50) // BASIC, STANDARD, PREMIUM
+  allowedFeatures         String[] @default(["ORDERS", "QUOTES", "DOCUMENTS"]) @map("allowed_features")
+
+  // Feature Toggles
+  instantQuoteEnabled     Boolean  @default(false) @map("instant_quote_enabled")
+  orderPlacementEnabled   Boolean  @default(true) @map("order_placement_enabled")
+  documentAccessEnabled   Boolean  @default(true) @map("document_access_enabled")
+  approvalWorkflowEnabled Boolean  @default(true) @map("approval_workflow_enabled")
+  messagingEnabled        Boolean  @default(true) @map("messaging_enabled")
+
+  // Document Visibility
+  visibleDocumentTypes    String[] @default(["QUOTE", "ORDER_ACK", "INVOICE", "COC"]) @map("visible_document_types")
+
+  // Pricing Visibility
+  showPricing             Boolean  @default(true) @map("show_pricing")
+  showCostBreakdown       Boolean  @default(false) @map("show_cost_breakdown")
+
+  // Branding
+  brandingConfig          Json     @default("{}") @map("branding_config") @db.JsonB // { primaryColor, logoUrl, faviconUrl, ... }
+  welcomeMessage          String?  @map("welcome_message") @db.Text
+
+  // Notification Preferences (Default for new users)
+  notificationPreferences Json     @default("{}") @map("notification_preferences") @db.JsonB
+
+  // Limits
+  maxFileUploadMb         Int      @default(50) @map("max_file_upload_mb")
+  maxRfqPerMonth          Int?     @map("max_rfq_per_month")
+
+  // Metadata
+  metadata                Json     @default("{}") @db.JsonB
+
+  // Audit
+  createdAt               DateTime @default(now()) @map("created_at") @db.Timestamptz
+  createdBy               String?  @map("created_by") @db.Uuid
+  updatedAt               DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  updatedBy               String?  @map("updated_by") @db.Uuid
+
+  // Relations
+  customer                Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  organization            Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("customer_portal_config")
+  @@schema("public")
+}
+
+// -----------------------------------------------------------------------------
+// PORTAL USER
+// -----------------------------------------------------------------------------
+
+model PortalUser {
+  id                      String      @id @default(uuid()) @db.Uuid
+  customerId              String      @map("customer_id") @db.Uuid
+  organizationId          String      @map("organization_id") @db.Uuid
+  contactId               String?     @map("contact_id") @db.Uuid
+
+  // Authentication
+  email                   String      @db.VarChar(255)
+  passwordHash            String      @map("password_hash") @db.VarChar(255)
+
+  // Profile
+  firstName               String      @map("first_name") @db.VarChar(100)
+  lastName                String      @map("last_name") @db.VarChar(100)
+  phone                   String?     @db.VarChar(50)
+  jobTitle                String?     @map("job_title") @db.VarChar(100)
+  department              String?     @db.VarChar(100)
+
+  // Role & Permissions
+  role                    PortalRole  @default(VIEWER)
+  permissions             String[]    @default([])
+
+  // Access Control
+  isActive                Boolean     @default(true) @map("is_active")
+  canPlaceOrders          Boolean     @default(false) @map("can_place_orders")
+  canApprove              Boolean     @default(false) @map("can_approve")
+  canViewPricing          Boolean     @default(true) @map("can_view_pricing")
+  canUploadFiles          Boolean     @default(true) @map("can_upload_files")
+
+  // Approval Limits
+  approvalLimit           Decimal?    @map("approval_limit") @db.Decimal(15, 2)
+
+  // Preferences
+  defaultShipToId         String?     @map("default_ship_to_id") @db.Uuid
+  notificationPreferences Json        @default("{}") @map("notification_preferences") @db.JsonB
+
+  // MFA
+  mfaEnabled              Boolean     @default(false) @map("mfa_enabled")
+  mfaSecret               String?     @map("mfa_secret") @db.VarChar(255)
+  mfaBackupCodes          String[]    @default([]) @map("mfa_backup_codes")
+
+  // Activity
+  lastLoginAt             DateTime?   @map("last_login_at") @db.Timestamptz
+  lastActivityAt          DateTime?   @map("last_activity_at") @db.Timestamptz
+  loginCount              Int         @default(0) @map("login_count")
+  failedLoginAttempts     Int         @default(0) @map("failed_login_attempts")
+  lockedUntil             DateTime?   @map("locked_until") @db.Timestamptz
+
+  // Password Reset
+  resetToken              String?     @map("reset_token") @db.VarChar(255)
+  resetTokenExpiry        DateTime?   @map("reset_token_expiry") @db.Timestamptz
+
+  // Metadata
+  metadata                Json        @default("{}") @db.JsonB
+
+  // Audit
+  createdAt               DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  createdBy               String?     @map("created_by") @db.Uuid
+  updatedAt               DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+  updatedBy               String?     @map("updated_by") @db.Uuid
+
+  // Relations
+  customer                Customer        @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  organization            Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contact                 CustomerContact? @relation(fields: [contactId], references: [id])
+  sessions                PortalSession[]
+  rfqs                    RFQ[]
+  sentMessages            PortalMessage[] @relation("PortalMessageSender")
+  notifications           PortalNotification[]
+  savedSearches           SavedSearch[]
+  favorites               Favorite[]
+  approvalActions         ApprovalHistory[] @relation("ApprovalActionBy")
+  resolvedApprovals       ApprovalRequest[] @relation("ApprovalResolver")
+  activityLogs            PortalActivityLog[]
+
+  @@unique([organizationId, email])
+  @@index([customerId])
+  @@index([organizationId])
+  @@index([email])
+  @@index([isActive])
+  @@map("portal_user")
+  @@schema("public")
+}
+
+// -----------------------------------------------------------------------------
+// PORTAL SESSION
+// -----------------------------------------------------------------------------
+
+model PortalSession {
+  id                String        @id @default(uuid()) @db.Uuid
+  portalUserId      String        @map("portal_user_id") @db.Uuid
+
+  // Token
+  token             String        @unique @db.VarChar(500)
+  refreshToken      String?       @unique @map("refresh_token") @db.VarChar(500)
+
+  // Device Info
+  deviceInfo        Json          @default("{}") @map("device_info") @db.JsonB // { deviceType, os, browser, ... }
+  ipAddress         String?       @map("ip_address") @db.VarChar(45)
+  userAgent         String?       @map("user_agent") @db.Text
+
+  // Status
+  status            SessionStatus @default(ACTIVE)
+
+  // Timing
+  expiresAt         DateTime      @map("expires_at") @db.Timestamptz
+  lastActivityAt    DateTime      @default(now()) @map("last_activity_at") @db.Timestamptz
+  endedAt           DateTime?     @map("ended_at") @db.Timestamptz
+
+  // Metadata
+  metadata          Json          @default("{}") @db.JsonB
+
+  // Audit
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  portalUser        PortalUser    @relation(fields: [portalUserId], references: [id], onDelete: Cascade)
+
+  @@index([portalUserId])
+  @@index([token])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("portal_session")
+  @@schema("public")
+}
+
+// -----------------------------------------------------------------------------
+// RFQ (Request for Quote)
+// -----------------------------------------------------------------------------
+
+model RFQ {
+  id                    String          @id @default(uuid()) @db.Uuid
+  customerId            String          @map("customer_id") @db.Uuid
+  organizationId        String          @map("organization_id") @db.Uuid
+  portalUserId          String?         @map("portal_user_id") @db.Uuid
+
+  // Identification
+  rfqNumber             String          @map("rfq_number") @db.VarChar(50)
+  customerReference     String?         @map("customer_reference") @db.VarChar(100)
+
+  // Status
+  status                RFQStatus       @default(DRAFT)
+
+  // Details
+  title                 String?         @db.VarChar(255)
+  description           String?         @db.Text
+
+  // Requirements
+  materialPreference    String?         @map("material_preference") @db.Text
+  finishRequirements    String?         @map("finish_requirements") @db.Text
+  toleranceRequirements String?         @map("tolerance_requirements") @db.Text
+  quantityTiers         Int[]           @default([]) @map("quantity_tiers")
+
+  // Delivery
+  requiredDate          DateTime?       @map("required_date") @db.Date
+  deliveryUrgency       DeliveryUrgency @default(STANDARD) @map("delivery_urgency")
+
+  // Dates
+  submittedAt           DateTime?       @map("submitted_at") @db.Timestamptz
+  expiresAt             DateTime?       @map("expires_at") @db.Timestamptz
+
+  // Files
+  cadFileIds            String[]        @default([]) @map("cad_file_ids")
+  drawingFileIds        String[]        @default([]) @map("drawing_file_ids")
+  supportingFileIds     String[]        @default([]) @map("supporting_file_ids")
+
+  // Notes
+  customerNotes         String?         @map("customer_notes") @db.Text
+  internalNotes         String?         @map("internal_notes") @db.Text
+
+  // Processing
+  assignedTo            String?         @map("assigned_to") @db.Uuid
+  assignedAt            DateTime?       @map("assigned_at") @db.Timestamptz
+
+  // Instant Quote
+  instantQuoteEligible  Boolean         @default(false) @map("instant_quote_eligible")
+  instantQuoteResult    Json?           @map("instant_quote_result") @db.JsonB
+
+  // Conversion
+  convertedQuoteId      String?         @map("converted_quote_id") @db.Uuid
+  convertedAt           DateTime?       @map("converted_at") @db.Timestamptz
+
+  // Metadata
+  metadata              Json            @default("{}") @db.JsonB
+
+  // Audit
+  createdAt             DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  createdBy             String?         @map("created_by") @db.Uuid
+  updatedAt             DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+  updatedBy             String?         @map("updated_by") @db.Uuid
+
+  // Relations
+  customer              Customer        @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  organization          Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  portalUser            PortalUser?     @relation(fields: [portalUserId], references: [id])
+  assignee              User?           @relation("RFQAssignee", fields: [assignedTo], references: [id])
+  convertedQuote        Quote?          @relation("RFQConvertedQuote", fields: [convertedQuoteId], references: [id])
+  lines                 RFQLine[]
+
+  @@unique([organizationId, rfqNumber])
+  @@index([customerId])
+  @@index([organizationId])
+  @@index([status])
+  @@index([submittedAt(sort: Desc)])
+  @@map("rfq")
+  @@schema("public")
+}
+
+// -----------------------------------------------------------------------------
+// RFQ LINE
+// -----------------------------------------------------------------------------
+
+model RFQLine {
+  id                    String   @id @default(uuid()) @db.Uuid
+  rfqId                 String   @map("rfq_id") @db.Uuid
+
+  // Line Number
+  lineNumber            Int      @map("line_number")
+
+  // Part Info
+  partNumber            String?  @map("part_number") @db.VarChar(100)
+  partName              String   @map("part_name") @db.VarChar(255)
+  description           String?  @db.Text
+
+  // Quantity
+  quantity              Int
+  unit                  String   @default("EACH") @db.VarChar(20)
+
+  // Target Pricing
+  targetPrice           Decimal? @map("target_price") @db.Decimal(15, 4)
+
+  // Requirements
+  material              String?  @db.VarChar(100)
+  finish                String?  @db.VarChar(100)
+  specifications        Json     @default("{}") @db.JsonB
+
+  // Files
+  cadFileId             String?  @map("cad_file_id") @db.Uuid
+  drawingFileId         String?  @map("drawing_file_id") @db.Uuid
+  attachmentIds         String[] @default([]) @map("attachment_ids")
+
+  // Analysis Results (populated after processing)
+  geometryAnalysis      Json?    @map("geometry_analysis") @db.JsonB
+  manufacturabilityScore Decimal? @map("manufacturability_score") @db.Decimal(5, 2)
+  manufacturabilityIssues Json?  @map("manufacturability_issues") @db.JsonB
+
+  // Notes
+  notes                 String?  @db.Text
+
+  // Metadata
+  metadata              Json     @default("{}") @db.JsonB
+
+  // Audit
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  rfq                   RFQ      @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+
+  @@unique([rfqId, lineNumber])
+  @@index([rfqId])
+  @@map("rfq_line")
+  @@schema("public")
+}
+
+// -----------------------------------------------------------------------------
+// APPROVAL REQUEST
+// -----------------------------------------------------------------------------
+
+model ApprovalRequest {
+  id                    String              @id @default(uuid()) @db.Uuid
+  organizationId        String              @map("organization_id") @db.Uuid
+  customerId            String              @map("customer_id") @db.Uuid
+
+  // Identification
+  requestNumber         String              @map("request_number") @db.VarChar(50)
+
+  // Type & Entity
+  requestType           ApprovalRequestType @map("request_type")
+  entityType            String              @map("entity_type") @db.VarChar(50) // FAI_REPORT, NCR, QUOTE, etc.
+  entityId              String              @map("entity_id") @db.Uuid
+
+  // Details
+  title                 String              @db.VarChar(255)
+  description           String?             @db.Text
+
+  // Status
+  status                ApprovalStatus      @default(PENDING)
+
+  // Assignment
+  assignedTo            String?             @map("assigned_to") @db.Uuid
+  delegatedFrom         String?             @map("delegated_from") @db.Uuid
+
+  // Timing
+  deadline              DateTime?           @db.Timestamptz
+  submittedAt           DateTime            @default(now()) @map("submitted_at") @db.Timestamptz
+
+  // Resolution
+  resolvedBy            String?             @map("resolved_by") @db.Uuid
+  resolvedAt            DateTime?           @map("resolved_at") @db.Timestamptz
+  resolutionNotes       String?             @map("resolution_notes") @db.Text
+
+  // Documents
+  documentIds           String[]            @default([]) @map("document_ids")
+
+  // Reminder
+  lastReminderAt        DateTime?           @map("last_reminder_at") @db.Timestamptz
+  reminderCount         Int                 @default(0) @map("reminder_count")
+
+  // Metadata
+  metadata              Json                @default("{}") @db.JsonB
+
+  // Audit
+  createdAt             DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  createdBy             String?             @map("created_by") @db.Uuid
+  updatedAt             DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+  updatedBy             String?             @map("updated_by") @db.Uuid
+
+  // Relations
+  organization          Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer              Customer            @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  resolver              PortalUser?         @relation("ApprovalResolver", fields: [resolvedBy], references: [id])
+  history               ApprovalHistory[]
+
+  @@unique([organizationId, requestNumber])
+  @@index([organizationId])
+  @@index([customerId])
+  @@index([status])
+  @@index([assignedTo])
+  @@index([deadline])
+  @@map("approval_request")
+  @@schema("public")
+}
+
+// -----------------------------------------------------------------------------
+// APPROVAL HISTORY
+// -----------------------------------------------------------------------------
+
+model ApprovalHistory {
+  id                    String          @id @default(uuid()) @db.Uuid
+  approvalRequestId     String          @map("approval_request_id") @db.Uuid
+
+  // Action
+  action                String          @db.VarChar(50) // SUBMITTED, APPROVED, REJECTED, DELEGATED, COMMENT, REMINDER
+  previousStatus        ApprovalStatus? @map("previous_status")
+  newStatus             ApprovalStatus? @map("new_status")
+
+  // Actor
+  actionBy              String          @map("action_by") @db.Uuid
+  actionByType          String          @default("PORTAL_USER") @map("action_by_type") @db.VarChar(20) // PORTAL_USER, INTERNAL_USER, SYSTEM
+
+  // Details
+  comments              String?         @db.Text
+  delegatedTo           String?         @map("delegated_to") @db.Uuid
+
+  // Digital Signature
+  digitalSignature      Json?           @map("digital_signature") @db.JsonB // { signatureData, timestamp, ipAddress, ... }
+
+  // Context
+  ipAddress             String?         @map("ip_address") @db.VarChar(45)
+  userAgent             String?         @map("user_agent") @db.Text
+
+  // Metadata
+  metadata              Json            @default("{}") @db.JsonB
+
+  // Audit
+  actionAt              DateTime        @default(now()) @map("action_at") @db.Timestamptz
+
+  // Relations
+  approvalRequest       ApprovalRequest @relation(fields: [approvalRequestId], references: [id], onDelete: Cascade)
+  actor                 PortalUser?     @relation("ApprovalActionBy", fields: [actionBy], references: [id])
+
+  @@index([approvalRequestId])
+  @@index([actionAt(sort: Desc)])
+  @@map("approval_history")
+  @@schema("public")
+}
+
+// -----------------------------------------------------------------------------
+// MESSAGE THREAD
+// -----------------------------------------------------------------------------
+
+model MessageThread {
+  id                    String          @id @default(uuid()) @db.Uuid
+  organizationId        String          @map("organization_id") @db.Uuid
+  customerId            String          @map("customer_id") @db.Uuid
+
+  // Thread Details
+  subject               String          @db.VarChar(255)
+  reference             String?         @db.VarChar(100) // Thread reference number
+
+  // Entity Association (optional)
+  entityType            String?         @map("entity_type") @db.VarChar(50) // ORDER, QUOTE, RFQ, etc.
+  entityId              String?         @map("entity_id") @db.Uuid
+
+  // Status
+  priority              MessagePriority @default(NORMAL)
+  isOpen                Boolean         @default(true) @map("is_open")
+  isArchived            Boolean         @default(false) @map("is_archived")
+
+  // Assignment
+  assignedTo            String?         @map("assigned_to") @db.Uuid
+
+  // Statistics
+  messageCount          Int             @default(0) @map("message_count")
+  lastMessageAt         DateTime?       @map("last_message_at") @db.Timestamptz
+  lastMessageBy         String?         @map("last_message_by") @db.Uuid
+  lastMessageType       SenderType?     @map("last_message_type")
+
+  // Metadata
+  metadata              Json            @default("{}") @db.JsonB
+
+  // Audit
+  createdAt             DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  createdBy             String?         @map("created_by") @db.Uuid
+  updatedAt             DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  organization          Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer              Customer        @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  assignee              User?           @relation("ThreadAssignee", fields: [assignedTo], references: [id])
+  messages              PortalMessage[]
+
+  @@index([organizationId])
+  @@index([customerId])
+  @@index([entityType, entityId])
+  @@index([isOpen])
+  @@index([lastMessageAt(sort: Desc)])
+  @@map("message_thread")
+  @@schema("public")
+}
+
+// -----------------------------------------------------------------------------
+// PORTAL MESSAGE
+// -----------------------------------------------------------------------------
+
+model PortalMessage {
+  id                    String        @id @default(uuid()) @db.Uuid
+  threadId              String        @map("thread_id") @db.Uuid
+
+  // Sender
+  senderType            SenderType    @map("sender_type")
+  senderPortalUserId    String?       @map("sender_portal_user_id") @db.Uuid
+  senderUserId          String?       @map("sender_user_id") @db.Uuid
+
+  // Content
+  body                  String        @db.Text
+  bodyHtml              String?       @map("body_html") @db.Text
+  attachmentIds         String[]      @default([]) @map("attachment_ids")
+
+  // Read Status
+  readByCustomer        Boolean       @default(false) @map("read_by_customer")
+  readByCustomerAt      DateTime?     @map("read_by_customer_at") @db.Timestamptz
+  readByInternal        Boolean       @default(false) @map("read_by_internal")
+  readByInternalAt      DateTime?     @map("read_by_internal_at") @db.Timestamptz
+
+  // Flags
+  isSystemMessage       Boolean       @default(false) @map("is_system_message")
+
+  // Metadata
+  metadata              Json          @default("{}") @db.JsonB
+
+  // Audit
+  createdAt             DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  editedAt              DateTime?     @map("edited_at") @db.Timestamptz
+
+  // Relations
+  thread                MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  portalSender          PortalUser?   @relation("PortalMessageSender", fields: [senderPortalUserId], references: [id])
+  internalSender        User?         @relation("InternalMessageSender", fields: [senderUserId], references: [id])
+
+  @@index([threadId])
+  @@index([createdAt(sort: Desc)])
+  @@index([senderType])
+  @@map("portal_message")
+  @@schema("public")
+}
+
+// -----------------------------------------------------------------------------
+// PORTAL NOTIFICATION
+// -----------------------------------------------------------------------------
+
+model PortalNotification {
+  id                    String     @id @default(uuid()) @db.Uuid
+  portalUserId          String     @map("portal_user_id") @db.Uuid
+
+  // Notification Details
+  type                  String     @db.VarChar(50) // ORDER_STATUS, QUOTE_READY, SHIPMENT, APPROVAL_REQUIRED, etc.
+  title                 String     @db.VarChar(255)
+  message               String     @db.Text
+
+  // Entity Reference
+  entityType            String?    @map("entity_type") @db.VarChar(50)
+  entityId              String?    @map("entity_id") @db.Uuid
+
+  // Action URL
+  actionUrl             String?    @map("action_url") @db.VarChar(500)
+
+  // Status
+  isRead                Boolean    @default(false) @map("is_read")
+  readAt                DateTime?  @map("read_at") @db.Timestamptz
+  isDismissed           Boolean    @default(false) @map("is_dismissed")
+  dismissedAt           DateTime?  @map("dismissed_at") @db.Timestamptz
+
+  // Delivery
+  emailSent             Boolean    @default(false) @map("email_sent")
+  emailSentAt           DateTime?  @map("email_sent_at") @db.Timestamptz
+  smsSent               Boolean    @default(false) @map("sms_sent")
+  smsSentAt             DateTime?  @map("sms_sent_at") @db.Timestamptz
+
+  // Metadata
+  metadata              Json       @default("{}") @db.JsonB
+
+  // Audit
+  createdAt             DateTime   @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  portalUser            PortalUser @relation(fields: [portalUserId], references: [id], onDelete: Cascade)
+
+  @@index([portalUserId])
+  @@index([portalUserId, isRead])
+  @@index([type])
+  @@index([createdAt(sort: Desc)])
+  @@map("portal_notification")
+  @@schema("public")
+}
+
+// -----------------------------------------------------------------------------
+// SAVED SEARCH
+// -----------------------------------------------------------------------------
+
+model SavedSearch {
+  id                    String     @id @default(uuid()) @db.Uuid
+  portalUserId          String     @map("portal_user_id") @db.Uuid
+
+  // Search Details
+  name                  String     @db.VarChar(100)
+  entityType            String     @map("entity_type") @db.VarChar(50) // ORDERS, QUOTES, PARTS, SHIPMENTS
+  criteria              Json       @db.JsonB // { filters: [...], sort: {...}, ... }
+
+  // Flags
+  isDefault             Boolean    @default(false) @map("is_default")
+  isShared              Boolean    @default(false) @map("is_shared")
+
+  // Usage
+  lastUsedAt            DateTime?  @map("last_used_at") @db.Timestamptz
+  useCount              Int        @default(0) @map("use_count")
+
+  // Metadata
+  metadata              Json       @default("{}") @db.JsonB
+
+  // Audit
+  createdAt             DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  portalUser            PortalUser @relation(fields: [portalUserId], references: [id], onDelete: Cascade)
+
+  @@index([portalUserId])
+  @@index([portalUserId, entityType])
+  @@map("saved_search")
+  @@schema("public")
+}
+
+// -----------------------------------------------------------------------------
+// FAVORITE
+// -----------------------------------------------------------------------------
+
+model Favorite {
+  id                    String     @id @default(uuid()) @db.Uuid
+  portalUserId          String     @map("portal_user_id") @db.Uuid
+
+  // Entity Reference
+  entityType            String     @map("entity_type") @db.VarChar(50) // ORDER, QUOTE, PART, SHIPMENT
+  entityId              String     @map("entity_id") @db.Uuid
+
+  // Display
+  displayName           String?    @map("display_name") @db.VarChar(200)
+  displayOrder          Int        @default(0) @map("display_order")
+
+  // Metadata
+  metadata              Json       @default("{}") @db.JsonB
+
+  // Audit
+  createdAt             DateTime   @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  portalUser            PortalUser @relation(fields: [portalUserId], references: [id], onDelete: Cascade)
+
+  @@unique([portalUserId, entityType, entityId])
+  @@index([portalUserId])
+  @@index([entityType, entityId])
+  @@map("favorite")
+  @@schema("public")
+}
+
+// -----------------------------------------------------------------------------
+// PORTAL ACTIVITY LOG
+// -----------------------------------------------------------------------------
+
+model PortalActivityLog {
+  id                    String     @id @default(uuid()) @db.Uuid
+  portalUserId          String     @map("portal_user_id") @db.Uuid
+  customerId            String     @map("customer_id") @db.Uuid
+
+  // Activity Details
+  action                String     @db.VarChar(100) // LOGIN, LOGOUT, VIEW_ORDER, DOWNLOAD_DOCUMENT, etc.
+  description           String?    @db.Text
+
+  // Entity Reference
+  entityType            String?    @map("entity_type") @db.VarChar(50)
+  entityId              String?    @map("entity_id") @db.Uuid
+
+  // Context
+  ipAddress             String?    @map("ip_address") @db.VarChar(45)
+  userAgent             String?    @map("user_agent") @db.Text
+  sessionId             String?    @map("session_id") @db.Uuid
+
+  // Request Details
+  requestPath           String?    @map("request_path") @db.VarChar(500)
+  requestMethod         String?    @map("request_method") @db.VarChar(10)
+
+  // Result
+  success               Boolean    @default(true)
+  errorMessage          String?    @map("error_message") @db.Text
+
+  // Metadata
+  metadata              Json       @default("{}") @db.JsonB
+
+  // Audit
+  timestamp             DateTime   @default(now()) @db.Timestamptz
+
+  // Relations
+  portalUser            PortalUser @relation(fields: [portalUserId], references: [id], onDelete: Cascade)
+
+  @@index([portalUserId])
+  @@index([customerId])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([timestamp(sort: Desc)])
+  @@map("portal_activity_log")
+  @@schema("public")
+}
+
+
+// =============================================================================
+// REQUIRED RELATION ADDITIONS TO EXISTING MODELS
+// =============================================================================
+//
+// Add to Organization model:
+//   customerPortalConfigs CustomerPortalConfig[]
+//   portalUsers           PortalUser[]
+//   rfqs                  RFQ[]
+//   approvalRequests      ApprovalRequest[]
+//   messageThreads        MessageThread[]
+//
+// Add to Customer model:
+//   portalConfig          CustomerPortalConfig?
+//   portalUsers           PortalUser[]
+//   rfqs                  RFQ[]
+//   approvalRequests      ApprovalRequest[]
+//   messageThreads        MessageThread[]
+//
+// Add to CustomerContact model:
+//   portalUser            PortalUser?
+//
+// Add to User model:
+//   assignedRfqs          RFQ[]            @relation("RFQAssignee")
+//   assignedThreads       MessageThread[]  @relation("ThreadAssignee")
+//   internalMessages      PortalMessage[]  @relation("InternalMessageSender")
+//
+// Add to Quote model:
+//   sourceRfqs            RFQ[]            @relation("RFQConvertedQuote")
+//
+// =============================================================================
