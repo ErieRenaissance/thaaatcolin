@@ -19,7 +19,10 @@
 
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
-import { PrismaModule } from '../../prisma/prisma.module';
+
+import { PrismaModule } from '../../common/prisma/prisma.module';
+import { AuditModule } from '../audit/audit.module';
+
 import { QuoteAnalysisService } from './services/quote-analysis.service';
 import { GeometryAnalysisService } from './services/geometry-analysis.service';
 import { ToolpathGenerationService } from './services/toolpath-generation.service';
@@ -27,11 +30,13 @@ import { NestingService } from './services/nesting.service';
 import { SimulationService } from './services/simulation.service';
 import { DfmAssessmentService } from './services/dfm-assessment.service';
 import { LeadTimeCalculatorService } from './services/lead-time-calculator.service';
+
 import { QuoteAnalysisController } from './controllers/quote-analysis.controller';
 
 @Module({
   imports: [
     PrismaModule,
+    AuditModule,
     // Queue for processing CAD files asynchronously
     BullModule.registerQueue(
       { name: 'geometry-analysis' },
@@ -83,14 +88,7 @@ export class QuoteAnalysisModule {}
  *    - nesting-optimization: Optimization algorithms
  *    - simulation-rendering: 3D rendering jobs
  * 
- * 4. FILE STORAGE:
- *    - Uploaded CAD files stored in /uploads/cad/
- *    - Generated toolpaths stored in /outputs/toolpaths/
- *    - Simulation renders stored in /outputs/simulations/
- * 
- * 5. SUPPORTED FILE FORMATS:
- *    - STEP (.step, .stp) - 3D solid models
- *    - IGES (.iges, .igs) - 3D/2D exchange format
- *    - DXF (.dxf) - 2D drawings
- *    - Future: SOLIDWORKS, Fusion 360 native formats
+ * 4. AUDIT INTEGRATION:
+ *    - All quote analysis operations are logged via AuditModule
+ *    - Tracks CAD file uploads, analysis results, and user actions
  */
