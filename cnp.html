@@ -45,6 +45,10 @@
         .data-table tr:hover {
             background-color: #1f2937;
         }
+        
+        /* Reduced corner radii globally */
+        .rounded-3xl { border-radius: 1rem !important; }   /* was 1.5rem */
+        .rounded-2xl { border-radius: 0.75rem !important; } /* was 1rem */
     </style>
 </head>
 <body class="tailwind-ready bg-zinc-950 text-zinc-100 min-h-screen">
@@ -53,8 +57,8 @@
         <div class="max-w-screen-2xl mx-auto px-8 py-5 flex items-center justify-between">
             <div class="flex items-center gap-x-3">
                 <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-red-500 rounded-2xl flex items-center justify-center text-white font-bold text-2xl">🇺🇸🇨🇳</div>
-                <h1 class="heading-font text-3xl tracking-tighter">CNP DASHBOARD</h1>
-                <span class="px-3 py-1 text-xs font-semibold bg-emerald-500/10 text-emerald-400 rounded-3xl border border-emerald-500/30">LIVE • MARCH 2026</span>
+                <h1 class="heading-font text-2xl tracking-tighter">CNP DASHBOARD</h1>
+                <span class="px-3 py-1 text-xs font-semibold bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/30">LIVE • MARCH 2026</span>
             </div>
             
             <div class="flex items-center gap-x-8">
@@ -62,12 +66,12 @@
                 <div class="flex items-center gap-x-6">
                     <div class="text-right">
                         <div class="text-xs text-blue-400 font-medium">UNITED STATES</div>
-                        <div id="us-composite" class="text-5xl heading-font font-semibold text-blue-400">142</div>
+                        <div id="us-composite" class="text-4xl heading-font font-semibold text-blue-400">142</div>
                     </div>
                     <div class="h-14 w-px bg-zinc-700"></div>
                     <div>
                         <div class="text-xs text-red-400 font-medium">CHINA</div>
-                        <div id="china-composite" class="text-5xl heading-font font-semibold text-red-400">98</div>
+                        <div id="china-composite" class="text-4xl heading-font font-semibold text-red-400">98</div>
                     </div>
                 </div>
                 
@@ -80,7 +84,7 @@
                 </div>
                 
                 <button onclick="exportCSV()" 
-                        class="flex items-center gap-x-2 px-5 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-3xl text-sm font-medium transition-colors">
+                        class="flex items-center gap-x-2 px-5 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-sm font-medium transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17l-4-4m0 0l-4 4m4-4v12M3 13l4-4m0 0l4 4" />
                     </svg>
@@ -95,39 +99,39 @@
     <div class="max-w-screen-2xl mx-auto px-8 py-8 flex gap-8">
         <!-- SIDEBAR -->
         <div class="w-72 flex-shrink-0">
-            <div class="sticky top-24 bg-zinc-900 border border-zinc-800 rounded-3xl p-2">
-                <div onclick="navigateTo(0)" id="nav-0" class="nav-item flex items-center gap-x-3 px-5 py-4 hover:bg-zinc-800 rounded-3xl cursor-pointer mb-1 bg-blue-500/10 text-blue-400">
+            <div class="sticky top-24 bg-zinc-900 border border-zinc-800 rounded-2xl p-2">
+                <div onclick="navigateTo(0)" id="nav-0" class="nav-item flex items-center gap-x-3 px-5 py-4 hover:bg-zinc-800 rounded-2xl cursor-pointer mb-1 bg-blue-500/10 text-blue-400">
                     <span class="text-2xl">📊</span>
                     <span class="font-semibold">Overall Summary</span>
                 </div>
                 
                 <div class="h-px bg-zinc-800 my-3 mx-4"></div>
                 
-                <div onclick="navigateTo(1)" id="nav-1" class="nav-item flex items-center gap-x-3 px-5 py-4 hover:bg-zinc-800 rounded-3xl cursor-pointer mb-1">
+                <div onclick="navigateTo(1)" id="nav-1" class="nav-item flex items-center gap-x-3 px-5 py-4 hover:bg-zinc-800 rounded-2xl cursor-pointer mb-1">
                     <span class="text-2xl">💰</span>
                     <span class="font-semibold">1. Economic Strength</span>
                 </div>
-                <div onclick="navigateTo(2)" id="nav-2" class="nav-item flex items-center gap-x-3 px-5 py-4 hover:bg-zinc-800 rounded-3xl cursor-pointer mb-1">
+                <div onclick="navigateTo(2)" id="nav-2" class="nav-item flex items-center gap-x-3 px-5 py-4 hover:bg-zinc-800 rounded-2xl cursor-pointer mb-1">
                     <span class="text-2xl">🔬</span>
                     <span class="font-semibold">2. Science &amp; Technology</span>
                 </div>
-                <div onclick="navigateTo(3)" id="nav-3" class="nav-item flex items-center gap-x-3 px-5 py-4 hover:bg-zinc-800 rounded-3xl cursor-pointer mb-1">
+                <div onclick="navigateTo(3)" id="nav-3" class="nav-item flex items-center gap-x-3 px-5 py-4 hover:bg-zinc-800 rounded-2xl cursor-pointer mb-1">
                     <span class="text-2xl">🛡️</span>
                     <span class="font-semibold">3. National Defense</span>
                 </div>
-                <div onclick="navigateTo(4)" id="nav-4" class="nav-item flex items-center gap-x-3 px-5 py-4 hover:bg-zinc-800 rounded-3xl cursor-pointer mb-1">
+                <div onclick="navigateTo(4)" id="nav-4" class="nav-item flex items-center gap-x-3 px-5 py-4 hover:bg-zinc-800 rounded-2xl cursor-pointer mb-1">
                     <span class="text-2xl">🌍</span>
                     <span class="font-semibold">4. Resource Strength</span>
                 </div>
-                <div onclick="navigateTo(5)" id="nav-5" class="nav-item flex items-center gap-x-3 px-5 py-4 hover:bg-zinc-800 rounded-3xl cursor-pointer mb-1">
+                <div onclick="navigateTo(5)" id="nav-5" class="nav-item flex items-center gap-x-3 px-5 py-4 hover:bg-zinc-800 rounded-2xl cursor-pointer mb-1">
                     <span class="text-2xl">🏛️</span>
                     <span class="font-semibold">5. Political Strength</span>
                 </div>
-                <div onclick="navigateTo(6)" id="nav-6" class="nav-item flex items-center gap-x-3 px-5 py-4 hover:bg-zinc-800 rounded-3xl cursor-pointer mb-1">
+                <div onclick="navigateTo(6)" id="nav-6" class="nav-item flex items-center gap-x-3 px-5 py-4 hover:bg-zinc-800 rounded-2xl cursor-pointer mb-1">
                     <span class="text-2xl">📚</span>
                     <span class="font-semibold">6. Cultural &amp; Education</span>
                 </div>
-                <div onclick="navigateTo(7)" id="nav-7" class="nav-item flex items-center gap-x-3 px-5 py-4 hover:bg-zinc-800 rounded-3xl cursor-pointer">
+                <div onclick="navigateTo(7)" id="nav-7" class="nav-item flex items-center gap-x-3 px-5 py-4 hover:bg-zinc-800 rounded-2xl cursor-pointer">
                     <span class="text-2xl">🌐</span>
                     <span class="font-semibold">7. Foreign Policy / Diplomatic</span>
                 </div>
@@ -148,15 +152,15 @@
             <!-- OVERALL SUMMARY (default view) -->
             <div id="view-0">
                 <div class="mb-8">
-                    <h2 class="heading-font text-5xl tracking-tighter mb-2">US vs China Comprehensive National Power</h2>
+                    <h2 class="heading-font text-4xl tracking-tighter mb-2">US vs China Comprehensive National Power</h2>
                     <p class="text-zinc-400 max-w-md">Exact 7-pillar mirror of China’s internal benchmarking system. Data as of March 2026. Updated from IMF, SIPRI, WIPO, World Bank, and official sources.</p>
                 </div>
                 
                 <!-- Radar Chart -->
-                <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 mb-12">
+                <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 mb-12">
                     <h3 class="text-lg font-semibold mb-6 flex items-center gap-x-2">
                         <span>Pillar-by-Pillar Comparison</span>
-                        <span class="text-xs px-3 py-1 bg-zinc-800 rounded-3xl text-zinc-400">Radar shows normalized scores (US = 100 baseline)</span>
+                        <span class="text-xs px-3 py-1 bg-zinc-800 rounded-2xl text-zinc-400">Radar shows normalized scores (US = 100 baseline)</span>
                     </h3>
                     <canvas id="radarChart" class="max-h-96"></canvas>
                 </div>
@@ -169,108 +173,108 @@
             
             <!-- PILLAR VIEWS (hidden by default) -->
             <div id="view-1" class="hidden">
-                <h2 id="pillar-title" class="heading-font text-4xl mb-6 flex items-center gap-x-4">1. Economic Strength</h2>
+                <h2 id="pillar-title" class="heading-font text-3xl mb-6 flex items-center gap-x-4">1. Economic Strength</h2>
                 <div class="flex gap-8 mb-8">
-                    <div class="flex-1 bg-blue-500/10 border border-blue-500/30 rounded-3xl p-6">
+                    <div class="flex-1 bg-blue-500/10 border border-blue-500/30 rounded-2xl p-6">
                         <div class="text-blue-400 text-sm font-medium">UNITED STATES</div>
-                        <div id="us-pillar-score-1" class="text-7xl heading-font font-semibold text-blue-400">28.4</div>
+                        <div id="us-pillar-score-1" class="text-6xl heading-font font-semibold text-blue-400">28.4</div>
                     </div>
-                    <div class="flex-1 bg-red-500/10 border border-red-500/30 rounded-3xl p-6">
+                    <div class="flex-1 bg-red-500/10 border border-red-500/30 rounded-2xl p-6">
                         <div class="text-red-400 text-sm font-medium">CHINA</div>
-                        <div id="china-pillar-score-1" class="text-7xl heading-font font-semibold text-red-400">32.1</div>
+                        <div id="china-pillar-score-1" class="text-6xl heading-font font-semibold text-red-400">32.1</div>
                     </div>
                 </div>
-                <table id="table-1" class="data-table w-full text-sm bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden"></table>
+                <table id="table-1" class="data-table w-full text-sm bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden"></table>
             </div>
             
             <div id="view-2" class="hidden">
-                <h2 id="pillar-title" class="heading-font text-4xl mb-6 flex items-center gap-x-4">2. Science &amp; Technology Strength</h2>
+                <h2 id="pillar-title" class="heading-font text-3xl mb-6 flex items-center gap-x-4">2. Science &amp; Technology Strength</h2>
                 <div class="flex gap-8 mb-8">
-                    <div class="flex-1 bg-blue-500/10 border border-blue-500/30 rounded-3xl p-6">
+                    <div class="flex-1 bg-blue-500/10 border border-blue-500/30 rounded-2xl p-6">
                         <div class="text-blue-400 text-sm font-medium">UNITED STATES</div>
-                        <div id="us-pillar-score-2" class="text-7xl heading-font font-semibold text-blue-400">24.8</div>
+                        <div id="us-pillar-score-2" class="text-6xl heading-font font-semibold text-blue-400">24.8</div>
                     </div>
-                    <div class="flex-1 bg-red-500/10 border border-red-500/30 rounded-3xl p-6">
+                    <div class="flex-1 bg-red-500/10 border border-red-500/30 rounded-2xl p-6">
                         <div class="text-red-400 text-sm font-medium">CHINA</div>
-                        <div id="china-pillar-score-2" class="text-7xl heading-font font-semibold text-red-400">27.3</div>
+                        <div id="china-pillar-score-2" class="text-6xl heading-font font-semibold text-red-400">27.3</div>
                     </div>
                 </div>
-                <table id="table-2" class="data-table w-full text-sm bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden"></table>
+                <table id="table-2" class="data-table w-full text-sm bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden"></table>
             </div>
             
             <div id="view-3" class="hidden">
-                <h2 id="pillar-title" class="heading-font text-4xl mb-6 flex items-center gap-x-4">3. National Defense / Military Strength</h2>
+                <h2 id="pillar-title" class="heading-font text-3xl mb-6 flex items-center gap-x-4">3. National Defense / Military Strength</h2>
                 <div class="flex gap-8 mb-8">
-                    <div class="flex-1 bg-blue-500/10 border border-blue-500/30 rounded-3xl p-6">
+                    <div class="flex-1 bg-blue-500/10 border border-blue-500/30 rounded-2xl p-6">
                         <div class="text-blue-400 text-sm font-medium">UNITED STATES</div>
-                        <div id="us-pillar-score-3" class="text-7xl heading-font font-semibold text-blue-400">31.2</div>
+                        <div id="us-pillar-score-3" class="text-6xl heading-font font-semibold text-blue-400">31.2</div>
                     </div>
-                    <div class="flex-1 bg-red-500/10 border border-red-500/30 rounded-3xl p-6">
+                    <div class="flex-1 bg-red-500/10 border border-red-500/30 rounded-2xl p-6">
                         <div class="text-red-400 text-sm font-medium">CHINA</div>
-                        <div id="china-pillar-score-3" class="text-7xl heading-font font-semibold text-red-400">18.9</div>
+                        <div id="china-pillar-score-3" class="text-6xl heading-font font-semibold text-red-400">18.9</div>
                     </div>
                 </div>
-                <table id="table-3" class="data-table w-full text-sm bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden"></table>
+                <table id="table-3" class="data-table w-full text-sm bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden"></table>
             </div>
             
             <div id="view-4" class="hidden">
-                <h2 id="pillar-title" class="heading-font text-4xl mb-6 flex items-center gap-x-4">4. Resource Strength</h2>
+                <h2 id="pillar-title" class="heading-font text-3xl mb-6 flex items-center gap-x-4">4. Resource Strength</h2>
                 <div class="flex gap-8 mb-8">
-                    <div class="flex-1 bg-blue-500/10 border border-blue-500/30 rounded-3xl p-6">
+                    <div class="flex-1 bg-blue-500/10 border border-blue-500/30 rounded-2xl p-6">
                         <div class="text-blue-400 text-sm font-medium">UNITED STATES</div>
-                        <div id="us-pillar-score-4" class="text-7xl heading-font font-semibold text-blue-400">22.1</div>
+                        <div id="us-pillar-score-4" class="text-6xl heading-font font-semibold text-blue-400">22.1</div>
                     </div>
-                    <div class="flex-1 bg-red-500/10 border border-red-500/30 rounded-3xl p-6">
+                    <div class="flex-1 bg-red-500/10 border border-red-500/30 rounded-2xl p-6">
                         <div class="text-red-400 text-sm font-medium">CHINA</div>
-                        <div id="china-pillar-score-4" class="text-7xl heading-font font-semibold text-red-400">19.4</div>
+                        <div id="china-pillar-score-4" class="text-6xl heading-font font-semibold text-red-400">19.4</div>
                     </div>
                 </div>
-                <table id="table-4" class="data-table w-full text-sm bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden"></table>
+                <table id="table-4" class="data-table w-full text-sm bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden"></table>
             </div>
             
             <div id="view-5" class="hidden">
-                <h2 id="pillar-title" class="heading-font text-4xl mb-6 flex items-center gap-x-4">5. Political Strength</h2>
+                <h2 id="pillar-title" class="heading-font text-3xl mb-6 flex items-center gap-x-4">5. Political Strength</h2>
                 <div class="flex gap-8 mb-8">
-                    <div class="flex-1 bg-blue-500/10 border border-blue-500/30 rounded-3xl p-6">
+                    <div class="flex-1 bg-blue-500/10 border border-blue-500/30 rounded-2xl p-6">
                         <div class="text-blue-400 text-sm font-medium">UNITED STATES</div>
-                        <div id="us-pillar-score-5" class="text-7xl heading-font font-semibold text-blue-400">19.7</div>
+                        <div id="us-pillar-score-5" class="text-6xl heading-font font-semibold text-blue-400">19.7</div>
                     </div>
-                    <div class="flex-1 bg-red-500/10 border border-red-500/30 rounded-3xl p-6">
+                    <div class="flex-1 bg-red-500/10 border border-red-500/30 rounded-2xl p-6">
                         <div class="text-red-400 text-sm font-medium">CHINA</div>
-                        <div id="china-pillar-score-5" class="text-7xl heading-font font-semibold text-red-400">14.2</div>
+                        <div id="china-pillar-score-5" class="text-6xl heading-font font-semibold text-red-400">14.2</div>
                     </div>
                 </div>
-                <table id="table-5" class="data-table w-full text-sm bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden"></table>
+                <table id="table-5" class="data-table w-full text-sm bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden"></table>
             </div>
             
             <div id="view-6" class="hidden">
-                <h2 id="pillar-title" class="heading-font text-4xl mb-6 flex items-center gap-x-4">6. Cultural &amp; Education Strength</h2>
+                <h2 id="pillar-title" class="heading-font text-3xl mb-6 flex items-center gap-x-4">6. Cultural &amp; Education Strength</h2>
                 <div class="flex gap-8 mb-8">
-                    <div class="flex-1 bg-blue-500/10 border border-blue-500/30 rounded-3xl p-6">
+                    <div class="flex-1 bg-blue-500/10 border border-blue-500/30 rounded-2xl p-6">
                         <div class="text-blue-400 text-sm font-medium">UNITED STATES</div>
-                        <div id="us-pillar-score-6" class="text-7xl heading-font font-semibold text-blue-400">18.9</div>
+                        <div id="us-pillar-score-6" class="text-6xl heading-font font-semibold text-blue-400">18.9</div>
                     </div>
-                    <div class="flex-1 bg-red-500/10 border border-red-500/30 rounded-3xl p-6">
+                    <div class="flex-1 bg-red-500/10 border border-red-500/30 rounded-2xl p-6">
                         <div class="text-red-400 text-sm font-medium">CHINA</div>
-                        <div id="china-pillar-score-6" class="text-7xl heading-font font-semibold text-red-400">16.5</div>
+                        <div id="china-pillar-score-6" class="text-6xl heading-font font-semibold text-red-400">16.5</div>
                     </div>
                 </div>
-                <table id="table-6" class="data-table w-full text-sm bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden"></table>
+                <table id="table-6" class="data-table w-full text-sm bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden"></table>
             </div>
             
             <div id="view-7" class="hidden">
-                <h2 id="pillar-title" class="heading-font text-4xl mb-6 flex items-center gap-x-4">7. Foreign Policy / Diplomatic Strength</h2>
+                <h2 id="pillar-title" class="heading-font text-3xl mb-6 flex items-center gap-x-4">7. Foreign Policy / Diplomatic Strength</h2>
                 <div class="flex gap-8 mb-8">
-                    <div class="flex-1 bg-blue-500/10 border border-blue-500/30 rounded-3xl p-6">
+                    <div class="flex-1 bg-blue-500/10 border border-blue-500/30 rounded-2xl p-6">
                         <div class="text-blue-400 text-sm font-medium">UNITED STATES</div>
-                        <div id="us-pillar-score-7" class="text-7xl heading-font font-semibold text-blue-400">17.3</div>
+                        <div id="us-pillar-score-7" class="text-6xl heading-font font-semibold text-blue-400">17.3</div>
                     </div>
-                    <div class="flex-1 bg-red-500/10 border border-red-500/30 rounded-3xl p-6">
+                    <div class="flex-1 bg-red-500/10 border border-red-500/30 rounded-2xl p-6">
                         <div class="text-red-400 text-sm font-medium">CHINA</div>
-                        <div id="china-pillar-score-7" class="text-7xl heading-font font-semibold text-red-400">15.8</div>
+                        <div id="china-pillar-score-7" class="text-6xl heading-font font-semibold text-red-400">15.8</div>
                     </div>
                 </div>
-                <table id="table-7" class="data-table w-full text-sm bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden"></table>
+                <table id="table-7" class="data-table w-full text-sm bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden"></table>
             </div>
             
             <!-- Footer -->
@@ -463,12 +467,12 @@
             let html = ''
             cnpData.pillars.forEach(p => {
                 html += `
-                    <div onclick="navigateTo(${p.id})" class="pillar-card cursor-pointer bg-zinc-900 border border-zinc-800 rounded-3xl p-6 hover:border-zinc-600">
+                    <div onclick="navigateTo(${p.id})" class="pillar-card cursor-pointer bg-zinc-900 border border-zinc-800 rounded-2xl p-6 hover:border-zinc-600">
                         <div class="flex justify-between items-start mb-4">
                             <div class="text-3xl">${['💰','🔬','🛡️','🌍','🏛️','📚','🌐'][p.id-1]}</div>
-                            <div class="text-xs font-mono bg-zinc-800 px-3 py-1 rounded-3xl">${p.id}</div>
+                            <div class="text-xs font-mono bg-zinc-800 px-3 py-1 rounded-2xl">${p.id}</div>
                         </div>
-                        <div class="heading-font text-xl mb-1">${p.title}</div>
+                        <div class="heading-font text-lg mb-1">${p.title}</div>
                         <div class="flex justify-between text-sm">
                             <div>
                                 <span class="text-blue-400">US</span> 
@@ -479,8 +483,8 @@
                                 <span class="text-3xl heading-font">${p.chinaScore}</span>
                             </div>
                         </div>
-                        <div class="h-2 bg-zinc-800 rounded-3xl mt-6 overflow-hidden">
-                            <div class="h-2 bg-gradient-to-r from-blue-400 to-red-400 rounded-3xl" style="width: ${Math.round((p.usScore / (p.usScore + p.chinaScore)) * 100)}%"></div>
+                        <div class="h-2 bg-zinc-800 rounded-2xl mt-6 overflow-hidden">
+                            <div class="h-2 bg-gradient-to-r from-blue-400 to-red-400 rounded-2xl" style="width: ${Math.round((p.usScore / (p.usScore + p.chinaScore)) * 100)}%"></div>
                         </div>
                     </div>
                 `
