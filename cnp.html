@@ -1,973 +1,689 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="US vs China Comprehensive National Power (CNP) Dashboard — exact mirror of China's 7-pillar Huang/PLA framework with deep multi-level granularity (8–14 subcategories per indicator)">
-    <title>US vs China • CNP Dashboard • DEEP GRANULARITY</title>
-    <!-- Tailwind CSS v4 -->
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- Chart.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="US vs China Comprehensive National Power Dashboard — 7-pillar Huang/PLA framework with 400+ subcategories">
+    <title>CNP Dashboard — US vs China</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;600&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
-        
-        :root {
-            --tw-color-us: #3b82f6;
-            --tw-color-china: #ef4444;
-        }
-        
-        .tailwind-ready * {
-            font-family: 'Inter', system_ui, sans-serif;
-        }
-        
-        .heading-font {
-            font-family: 'Space Grotesk', sans-serif;
-        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-        .pillar-card {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+```
+    :root {
+        --bg-deep: #0a0e1a;
+        --bg-surface: #111827;
+        --bg-card: #1a2235;
+        --bg-elevated: #222d44;
+        --border: rgba(148, 163, 184, 0.08);
+        --border-hover: rgba(148, 163, 184, 0.18);
+        --text-primary: #e2e8f0;
+        --text-secondary: #94a3b8;
+        --text-muted: #64748b;
+        --us: #3b82f6;
+        --us-glow: rgba(59, 130, 246, 0.15);
+        --us-soft: #93c5fd;
+        --cn: #f43f5e;
+        --cn-glow: rgba(244, 63, 94, 0.15);
+        --cn-soft: #fda4af;
+        --green: #34d399;
+        --amber: #fbbf24;
+        --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+        --font-display: 'Fraunces', Georgia, serif;
+        --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+        --nav-h: 60px;
+        --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+        font-family: var(--font-body);
+        background: var(--bg-deep);
+        color: var(--text-primary);
+        min-height: 100vh;
+        min-height: 100dvh;
+        -webkit-font-smoothing: antialiased;
+        -webkit-text-size-adjust: 100%;
+        overflow-x: hidden;
+    }
+
+    body::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+        pointer-events: none;
+        z-index: 9999;
+    }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--bg-elevated); border-radius: 3px; }
+
+    /* ===== TOPNAV ===== */
+    .topnav {
+        position: sticky; top: 0; z-index: 100;
+        background: rgba(10, 14, 26, 0.88);
+        backdrop-filter: blur(16px) saturate(1.3);
+        -webkit-backdrop-filter: blur(16px) saturate(1.3);
+        border-bottom: 1px solid var(--border);
+    }
+    .topnav-inner {
+        max-width: 1600px; margin: 0 auto;
+        display: flex; align-items: center; justify-content: space-between;
+        height: var(--nav-h); padding: 0 12px;
+    }
+    @media (min-width: 768px) { .topnav-inner { padding: 0 2rem; } }
+
+    .nav-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    @media (min-width: 768px) { .nav-left { gap: 12px; } }
+
+    .hamburger {
+        display: flex; align-items: center; justify-content: center;
+        width: 40px; height: 40px; border-radius: 8px;
+        border: 1px solid var(--border); background: transparent;
+        color: var(--text-secondary); font-size: 20px; cursor: pointer;
+        -webkit-tap-highlight-color: transparent; flex-shrink: 0;
+    }
+    .hamburger:active { background: var(--bg-elevated); }
+    @media (min-width: 1025px) { .hamburger { display: none; } }
+
+    .nav-logo {
+        width: 32px; height: 32px; border-radius: 7px;
+        background: linear-gradient(135deg, var(--us), var(--cn));
+        display: grid; place-items: center;
+        font-size: 11px; font-weight: 700; color: white;
+        font-family: var(--font-mono); flex-shrink: 0;
+    }
+    .nav-title {
+        font-family: var(--font-display); font-size: 1rem;
+        font-weight: 600; letter-spacing: -0.3px; white-space: nowrap;
+    }
+    @media (min-width: 768px) { .nav-title { font-size: 1.1rem; } }
+    .nav-badge {
+        display: none; font-family: var(--font-mono);
+        font-size: 9px; font-weight: 500; color: var(--green);
+        background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.2);
+        padding: 2px 8px; border-radius: 20px; letter-spacing: 0.4px; white-space: nowrap;
+    }
+    @media (min-width: 640px) { .nav-badge { display: inline-block; } }
+
+    /* Score ticker — always visible */
+    .nav-scores {
+        display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+    }
+    @media (min-width: 768px) { .nav-scores { gap: 14px; } }
+    .nav-score { text-align: center; }
+    .nav-score-label {
+        font-size: 8px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+    }
+    @media (min-width: 768px) { .nav-score-label { font-size: 9px; letter-spacing: 1.3px; } }
+    .nav-score-val {
+        font-family: var(--font-display); font-size: 1.15rem;
+        font-weight: 700; line-height: 1;
+    }
+    @media (min-width: 768px) { .nav-score-val { font-size: 1.45rem; } }
+    .nav-divider { width: 1px; height: 26px; background: var(--border); }
+    .nav-delta {
+        font-family: var(--font-mono); font-size: 9px; font-weight: 600;
+        color: var(--us); background: var(--us-glow);
+        padding: 3px 7px; border-radius: 5px; white-space: nowrap;
+    }
+    @media (min-width: 768px) { .nav-delta { font-size: 11px; padding: 4px 10px; } }
+
+    .nav-right { display: flex; align-items: center; gap: 6px; }
+    .btn {
+        font-family: var(--font-body); font-size: 11px; font-weight: 500;
+        padding: 7px 12px; border-radius: 7px; border: 1px solid var(--border);
+        background: transparent; color: var(--text-secondary); cursor: pointer;
+        transition: all 0.15s; display: flex; align-items: center; gap: 5px;
+        white-space: nowrap; -webkit-tap-highlight-color: transparent;
+    }
+    .btn:hover, .btn:active { background: var(--bg-elevated); color: var(--text-primary); }
+    .btn-label { display: none; }
+    @media (min-width: 640px) { .btn-label { display: inline; } }
+
+    /* ===== DRAWER + OVERLAY ===== */
+    .drawer-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.55); z-index: 199;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .drawer-overlay.open { display: block; }
+
+    .sidebar {
+        position: fixed; top: 0; left: 0; bottom: 0; width: 280px;
+        background: var(--bg-deep); border-right: 1px solid var(--border);
+        z-index: 200; transform: translateX(-100%);
+        transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow-y: auto; -webkit-overflow-scrolling: touch;
+        padding: 20px 12px; padding-bottom: calc(20px + var(--safe-bottom));
+        display: flex; flex-direction: column;
+    }
+    .sidebar.open { transform: translateX(0); }
+
+    @media (min-width: 1025px) {
+        .drawer-overlay { display: none !important; }
+        .sidebar {
+            position: sticky; top: var(--nav-h);
+            height: calc(100vh - var(--nav-h));
+            transform: none; width: 250px; flex-shrink: 0;
+            border-right: 1px solid var(--border);
+            padding: 20px 12px 20px 0; z-index: 1;
         }
-        
-        .pillar-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
-        }
-        
-        .trend-up { color: #22c55e; }
-        .trend-down { color: #ef4444; }
-        .trend-stable { color: #eab308; }
-        
-        table {
-            border-collapse: collapse;
-        }
-        
-        .data-table tr:hover {
-            background-color: #1f2937;
-        }
-        
-        /* Smaller corner radii and fonts as requested */
-        .rounded-3xl { border-radius: 0.75rem !important; }
-        .rounded-2xl { border-radius: 0.5rem !important; }
-        .text-5xl { font-size: 2.5rem !important; }
-        .text-4xl { font-size: 2rem !important; }
-        .text-3xl { font-size: 1.75rem !important; }
-        .text-6xl { font-size: 2.25rem !important; }
-        
-        .sub-table {
-            background-color: #27272a;
-            font-size: 0.875rem;
-        }
-        
-        details[open] summary {
-            font-weight: 600;
-        }
-    </style>
+    }
+
+    .sidebar-section-label {
+        font-size: 9px; font-weight: 600; letter-spacing: 1.8px;
+        color: var(--text-muted); padding: 0 12px;
+        margin-bottom: 6px; margin-top: 18px;
+    }
+    .sidebar-section-label:first-child { margin-top: 0; }
+
+    .nav-link {
+        display: flex; align-items: center; gap: 10px;
+        padding: 11px 12px; border-radius: 8px; cursor: pointer;
+        transition: all 0.12s; margin-bottom: 2px;
+        font-size: 13px; font-weight: 500; color: var(--text-secondary);
+        position: relative; -webkit-tap-highlight-color: transparent;
+        min-height: 44px;
+    }
+    .nav-link:hover { background: rgba(148,163,184,0.06); color: var(--text-primary); }
+    .nav-link:active { background: rgba(148,163,184,0.1); }
+    .nav-link.active { background: var(--us-glow); color: var(--us); }
+    .nav-link.active::before {
+        content: ''; position: absolute; left: 0; top: 50%;
+        transform: translateY(-50%); width: 3px; height: 20px;
+        background: var(--us); border-radius: 0 3px 3px 0;
+    }
+    .nav-icon {
+        width: 28px; height: 28px; border-radius: 6px;
+        display: grid; place-items: center; font-size: 14px;
+        background: var(--bg-card); flex-shrink: 0;
+    }
+    .sidebar-footer {
+        margin-top: auto; padding: 16px 12px 0;
+        font-size: 10px; color: var(--text-muted); line-height: 1.5;
+    }
+    .pulse-dot {
+        display: inline-block; width: 6px; height: 6px;
+        background: var(--green); border-radius: 50%;
+        animation: pulse 2s infinite; margin-right: 3px;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* ===== MAIN ===== */
+    .layout { max-width: 1600px; margin: 0 auto; display: flex; gap: 0; }
+    .main { flex: 1; min-width: 0; padding: 24px 1rem 80px 1rem; }
+    @media (min-width: 768px) { .main { padding: 32px 2rem 80px 2rem; } }
+    @media (min-width: 1025px) { .main { padding: 32px 2rem 80px 32px; } }
+
+    .view { display: none; }
+    .view.active { display: block; animation: fadeUp 0.3s ease-out; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+    /* ===== OVERVIEW ===== */
+    .overview-header { margin-bottom: 28px; }
+    .overview-header h2 {
+        font-family: var(--font-display); font-size: 1.5rem;
+        font-weight: 700; letter-spacing: -0.3px; line-height: 1.2; margin-bottom: 6px;
+    }
+    @media (min-width: 768px) { .overview-header h2 { font-size: 2rem; } }
+    .overview-header p { color: var(--text-secondary); font-size: 13px; max-width: 560px; line-height: 1.6; }
+    @media (min-width: 768px) { .overview-header p { font-size: 14px; } }
+
+    .radar-wrap {
+        background: var(--bg-surface); border: 1px solid var(--border);
+        border-radius: 12px; padding: 16px; margin-bottom: 24px;
+        position: relative; overflow: hidden;
+    }
+    @media (min-width: 768px) { .radar-wrap { padding: 28px; } }
+    .radar-wrap::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent, var(--us), var(--cn), transparent);
+        opacity: 0.35;
+    }
+    .radar-head {
+        display: flex; flex-wrap: wrap; align-items: center;
+        justify-content: space-between; gap: 8px; margin-bottom: 14px;
+    }
+    .radar-head-title { font-size: 13px; font-weight: 600; }
+    @media (min-width: 768px) { .radar-head-title { font-size: 14px; } }
+    .radar-head-sub { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+    .radar-legend { display: flex; gap: 12px; font-size: 11px; color: var(--text-secondary); }
+    .radar-legend-item { display: flex; align-items: center; gap: 5px; }
+    .radar-legend-dot { width: 10px; height: 3px; border-radius: 2px; }
+    .radar-canvas-wrap { max-width: 480px; margin: 0 auto; }
+    .radar-fallback { text-align: center; padding: 32px 16px; color: var(--text-muted); font-size: 13px; }
+
+    /* Pillar cards */
+    .pillars-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    @media (min-width: 480px) { .pillars-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 900px) { .pillars-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; } }
+    @media (min-width: 1200px) { .pillars-grid { grid-template-columns: repeat(4, 1fr); } }
+
+    .pcard {
+        background: var(--bg-surface); border: 1px solid var(--border);
+        border-radius: 10px; padding: 16px; cursor: pointer;
+        transition: all 0.2s ease; -webkit-tap-highlight-color: transparent;
+        opacity: 0; animation: cardUp 0.35s ease-out forwards;
+    }
+    @media (min-width: 768px) { .pcard { padding: 18px; } }
+    .pcard:hover { border-color: var(--border-hover); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+    .pcard:active { transform: scale(0.98); }
+    @keyframes cardUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+    .pcard:nth-child(1){animation-delay:.04s} .pcard:nth-child(2){animation-delay:.08s}
+    .pcard:nth-child(3){animation-delay:.12s} .pcard:nth-child(4){animation-delay:.16s}
+    .pcard:nth-child(5){animation-delay:.2s} .pcard:nth-child(6){animation-delay:.24s}
+    .pcard:nth-child(7){animation-delay:.28s}
+
+    .pcard-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .pcard-icon { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; font-size: 15px; background: var(--bg-card); }
+    .pcard-num { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); background: var(--bg-card); padding: 2px 7px; border-radius: 4px; }
+    .pcard-title { font-weight: 600; font-size: 13px; margin-bottom: 12px; }
+    .pcard-scores { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; }
+    .pcard-s-label { font-size: 9px; font-weight: 600; letter-spacing: 0.7px; margin-bottom: 1px; }
+    .pcard-s-val { font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; line-height: 1; }
+    .bar-track { height: 4px; background: var(--bg-deep); border-radius: 2px; overflow: hidden; position: relative; }
+    .bar-us { height: 100%; background: var(--us); border-radius: 2px; transition: width 0.8s ease; }
+    .bar-cn { position: absolute; right: 0; top: 0; height: 100%; background: var(--cn); border-radius: 2px; transition: width 0.8s ease; }
+    .pcard-lead { font-family: var(--font-mono); font-size: 10px; font-weight: 500; margin-top: 8px; }
+
+    /* ===== PILLAR DETAIL ===== */
+    .pillar-head { margin-bottom: 24px; }
+    .pillar-head h2 {
+        font-family: var(--font-display); font-size: 1.3rem;
+        font-weight: 700; letter-spacing: -0.2px; margin-bottom: 3px;
+    }
+    @media (min-width: 768px) { .pillar-head h2 { font-size: 1.6rem; } }
+    .pillar-head-sub { color: var(--text-muted); font-size: 12px; }
+    .back-btn {
+        display: inline-flex; align-items: center; gap: 4px;
+        font-size: 12px; color: var(--text-muted); margin-bottom: 10px;
+        cursor: pointer; -webkit-tap-highlight-color: transparent;
+        min-height: 36px; padding: 4px 0;
+    }
+    .back-btn:hover { color: var(--text-primary); }
+
+    .score-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+    @media (min-width: 768px) { .score-pair { gap: 14px; } }
+    .scard { padding: 16px; border-radius: 10px; border: 1px solid; }
+    @media (min-width: 768px) { .scard { padding: 22px; } }
+    .scard.us { background: rgba(59,130,246,0.04); border-color: rgba(59,130,246,0.15); }
+    .scard.cn { background: rgba(244,63,94,0.04); border-color: rgba(244,63,94,0.15); }
+    .scard-label { font-size: 9px; font-weight: 600; letter-spacing: 1px; margin-bottom: 4px; }
+    @media (min-width: 768px) { .scard-label { font-size: 10px; } }
+    .scard-val { font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; line-height: 1; }
+    @media (min-width: 768px) { .scard-val { font-size: 2.2rem; } }
+
+    /* Scrollable table */
+    .table-scroll {
+        background: var(--bg-surface); border: 1px solid var(--border);
+        border-radius: 10px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    }
+    /* Scroll hint on mobile */
+    .table-scroll::after {
+        content: 'scroll →'; display: block;
+        text-align: center; font-size: 10px; color: var(--text-muted);
+        padding: 6px; background: var(--bg-card); border-top: 1px solid var(--border);
+    }
+    @media (min-width: 768px) { .table-scroll::after { display: none; } }
+
+    table { width: 100%; border-collapse: collapse; min-width: 620px; }
+    thead th {
+        font-size: 9px; font-weight: 600; letter-spacing: 1px;
+        color: var(--text-muted); text-transform: uppercase;
+        padding: 11px 12px; text-align: left; background: var(--bg-card);
+        border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 2; white-space: nowrap;
+    }
+    thead th.ctr { text-align: center; }
+    tbody td {
+        padding: 11px 12px; font-size: 12px;
+        border-bottom: 1px solid var(--border); vertical-align: middle;
+    }
+    tbody td.ctr { text-align: center; }
+    tbody tr { transition: background 0.12s; }
+    tbody tr:hover { background: rgba(148,163,184,0.04); }
+    .td-ind { font-weight: 500; color: var(--text-primary); white-space: nowrap; }
+    .td-us { color: var(--us-soft); font-family: var(--font-mono); font-size: 11px; }
+    .td-cn { color: var(--cn-soft); font-family: var(--font-mono); font-size: 11px; }
+    .td-note { color: var(--text-muted); font-size: 10px; max-width: 120px; }
+    .t-up { color: var(--green); }
+    .t-dn { color: var(--cn); }
+    .t-flat { color: var(--amber); }
+
+    .sub-row td { padding: 0; }
+    details summary {
+        display: flex; align-items: center; gap: 6px;
+        padding: 9px 12px; font-size: 10px; font-weight: 600;
+        letter-spacing: 0.4px; color: var(--text-muted);
+        cursor: pointer; user-select: none;
+        -webkit-tap-highlight-color: transparent; min-height: 40px;
+    }
+    details summary:hover { color: var(--text-secondary); background: rgba(148,163,184,0.03); }
+    details summary .chev { transition: transform 0.2s; font-size: 9px; }
+    details[open] summary .chev { transform: rotate(90deg); }
+    details[open] summary { color: var(--us); border-bottom: 1px solid var(--border); }
+    .sub-inner { padding: 6px 12px 10px; background: rgba(0,0,0,0.12); }
+    .sub-inner table { min-width: 300px; }
+    .sub-inner th { font-size: 9px; padding: 6px 8px; background: transparent; border-bottom: 1px solid rgba(148,163,184,0.06); }
+    .sub-inner td { padding: 6px 8px; border-bottom: 1px solid rgba(148,163,184,0.04); font-size: 11px; }
+
+    .footer {
+        margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border);
+        font-size: 10px; color: var(--text-muted); line-height: 1.6;
+    }
+    @media (min-width: 768px) {
+        .footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 11px; }
+    }
+</style>
+```
+
 </head>
-<body class="tailwind-ready bg-zinc-950 text-zinc-100 min-h-screen">
-    <!-- NAVBAR -->
-    <nav class="border-b border-zinc-800 bg-zinc-900 sticky top-0 z-50">
-        <div class="max-w-screen-2xl mx-auto px-8 py-5 flex items-center justify-between">
-            <div class="flex items-center gap-x-3">
-                <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-red-500 rounded-2xl flex items-center justify-center text-white font-bold text-2xl">🇺🇸🇨🇳</div>
-                <h1 class="heading-font text-2xl tracking-tighter">CNP DASHBOARD</h1>
-                <span class="px-3 py-1 text-xs font-semibold bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/30">LIVE • MARCH 2026 • 400+ SUBCATEGORIES</span>
-            </div>
-            
-            <div class="flex items-center gap-x-8">
-                <div class="flex items-center gap-x-6">
-                    <div class="text-right">
-                        <div class="text-xs text-blue-400 font-medium">UNITED STATES</div>
-                        <div id="us-composite" class="text-4xl heading-font font-semibold text-blue-400">142</div>
-                    </div>
-                    <div class="h-14 w-px bg-zinc-700"></div>
-                    <div>
-                        <div class="text-xs text-red-400 font-medium">CHINA</div>
-                        <div id="china-composite" class="text-4xl heading-font font-semibold text-red-400">98</div>
-                    </div>
-                </div>
-                
-                <div class="flex items-center gap-x-2 text-sm">
-                    <div class="flex items-center gap-x-1">
-                        <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
-                        <span>US LEAD</span>
-                    </div>
-                    <div class="text-emerald-400 font-semibold">+44 pts</div>
-                </div>
-                
-                <button onclick="exportCSV()" 
-                        class="flex items-center gap-x-2 px-5 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-sm font-medium transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17l-4-4m0 0l-4 4m4-4v12M3 13l4-4m0 0l4 4" />
-                    </svg>
-                    EXPORT CSV
-                </button>
-                
-                <div onclick="toggleDarkMode()" class="cursor-pointer w-9 h-9 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center text-xl">🌗</div>
-            </div>
-        </div>
-    </nav>
+<body>
 
-    <div class="max-w-screen-2xl mx-auto px-8 py-8 flex gap-8">
-        <!-- SIDEBAR -->
-        <div class="w-72 flex-shrink-0">
-            <div class="sticky top-24 bg-zinc-900 border border-zinc-800 rounded-2xl p-2">
-                <div onclick="navigateTo(0)" id="nav-0" class="nav-item flex items-center gap-x-3 px-5 py-4 hover:bg-zinc-800 rounded-2xl cursor-pointer mb-1 bg-blue-500/10 text-blue-400">
-                    <span class="text-2xl">📊</span>
-                    <span class="font-semibold">Overall Summary</span>
-                </div>
-                
-                <div class="h-px bg-zinc-800 my-3 mx-4"></div>
-                
-                <div onclick="navigateTo(1)" id="nav-1" class="nav-item flex items-center gap-x-3 px-5 py-4 hover:bg-zinc-800 rounded-2xl cursor-pointer mb-1">
-                    <span class="text-2xl">💰</span>
-                    <span class="font-semibold">1. Economic Strength</span>
-                </div>
-                <div onclick="navigateTo(2)" id="nav-2" class="nav-item flex items-center gap-x-3 px-5 py-4 hover:bg-zinc-800 rounded-2xl cursor-pointer mb-1">
-                    <span class="text-2xl">🔬</span>
-                    <span class="font-semibold">2. Science &amp; Technology</span>
-                </div>
-                <div onclick="navigateTo(3)" id="nav-3" class="nav-item flex items-center gap-x-3 px-5 py-4 hover:bg-zinc-800 rounded-2xl cursor-pointer mb-1">
-                    <span class="text-2xl">🛡️</span>
-                    <span class="font-semibold">3. National Defense</span>
-                </div>
-                <div onclick="navigateTo(4)" id="nav-4" class="nav-item flex items-center gap-x-3 px-5 py-4 hover:bg-zinc-800 rounded-2xl cursor-pointer mb-1">
-                    <span class="text-2xl">🌍</span>
-                    <span class="font-semibold">4. Resource Strength</span>
-                </div>
-                <div onclick="navigateTo(5)" id="nav-5" class="nav-item flex items-center gap-x-3 px-5 py-4 hover:bg-zinc-800 rounded-2xl cursor-pointer mb-1">
-                    <span class="text-2xl">🏛️</span>
-                    <span class="font-semibold">5. Political Strength</span>
-                </div>
-                <div onclick="navigateTo(6)" id="nav-6" class="nav-item flex items-center gap-x-3 px-5 py-4 hover:bg-zinc-800 rounded-2xl cursor-pointer mb-1">
-                    <span class="text-2xl">📚</span>
-                    <span class="font-semibold">6. Cultural &amp; Education</span>
-                </div>
-                <div onclick="navigateTo(7)" id="nav-7" class="nav-item flex items-center gap-x-3 px-5 py-4 hover:bg-zinc-800 rounded-2xl cursor-pointer">
-                    <span class="text-2xl">🌐</span>
-                    <span class="font-semibold">7. Foreign Policy / Diplomatic</span>
-                </div>
-                
-                <div class="mt-8 px-5 text-xs text-zinc-400 flex items-center justify-between">
-                    <div>Mirroring China’s Huang/PLA CNP Model • 400+ subcategories</div>
-                    <div class="flex items-center gap-x-1 text-emerald-400">
-                        <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-                        LIVE 2026
-                    </div>
-                </div>
-            </div>
+<nav class="topnav" role="navigation" aria-label="Primary">
+    <div class="topnav-inner">
+        <div class="nav-left">
+            <button class="hamburger" id="menuBtn" aria-label="Open menu" aria-expanded="false">☰</button>
+            <div class="nav-logo" aria-hidden="true">CNP</div>
+            <div class="nav-title">CNP Dashboard</div>
+            <span class="nav-badge"><span class="pulse-dot"></span>MAR 2026 · 400+</span>
         </div>
-
-        <!-- MAIN CONTENT -->
-        <div class="flex-1">
-            
-            <!-- OVERALL SUMMARY -->
-            <div id="view-0">
-                <div class="mb-8">
-                    <h2 class="heading-font text-4xl tracking-tighter mb-2">US vs China Comprehensive National Power</h2>
-                    <p class="text-zinc-400 max-w-md">Exact 7-pillar mirror of China’s internal benchmarking system with deep multi-level granularity (8–14 subcategories per indicator). Data as of March 2026.</p>
-                </div>
-                
-                <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 mb-12">
-                    <h3 class="text-lg font-semibold mb-6 flex items-center gap-x-2">
-                        Pillar-by-Pillar Comparison
-                        <span class="text-xs px-3 py-1 bg-zinc-800 rounded-2xl text-zinc-400">Radar shows normalized scores (US = 100 baseline)</span>
-                    </h3>
-                    <canvas id="radarChart" class="max-h-96"></canvas>
-                </div>
-                
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-6" id="quick-cards">
-                    <!-- Populated via JS -->
-                </div>
+        <div class="nav-scores" aria-label="Composite scores">
+            <div class="nav-score">
+                <div class="nav-score-label" style="color:#3b82f6">US</div>
+                <div class="nav-score-val" style="color:#3b82f6">142</div>
             </div>
-            
-            <!-- PILLAR VIEWS -->
-            <div id="view-1" class="hidden">
-                <h2 class="heading-font text-3xl mb-6 flex items-center gap-x-4">1. Economic Strength</h2>
-                <div class="flex gap-8 mb-8">
-                    <div class="flex-1 bg-blue-500/10 border border-blue-500/30 rounded-2xl p-6">
-                        <div class="text-blue-400 text-sm font-medium">UNITED STATES</div>
-                        <div id="us-pillar-score-1" class="text-6xl heading-font font-semibold text-blue-400">28.4</div>
-                    </div>
-                    <div class="flex-1 bg-red-500/10 border border-red-500/30 rounded-2xl p-6">
-                        <div class="text-red-400 text-sm font-medium">CHINA</div>
-                        <div id="china-pillar-score-1" class="text-6xl heading-font font-semibold text-red-400">32.1</div>
-                    </div>
-                </div>
-                <table id="table-1" class="data-table w-full text-sm bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden"></table>
+            <div class="nav-divider" aria-hidden="true"></div>
+            <div class="nav-score">
+                <div class="nav-score-label" style="color:#f43f5e">CN</div>
+                <div class="nav-score-val" style="color:#f43f5e">98</div>
             </div>
-            
-            <div id="view-2" class="hidden">
-                <h2 class="heading-font text-3xl mb-6 flex items-center gap-x-4">2. Science &amp; Technology Strength</h2>
-                <div class="flex gap-8 mb-8">
-                    <div class="flex-1 bg-blue-500/10 border border-blue-500/30 rounded-2xl p-6">
-                        <div class="text-blue-400 text-sm font-medium">UNITED STATES</div>
-                        <div id="us-pillar-score-2" class="text-6xl heading-font font-semibold text-blue-400">24.8</div>
-                    </div>
-                    <div class="flex-1 bg-red-500/10 border border-red-500/30 rounded-2xl p-6">
-                        <div class="text-red-400 text-sm font-medium">CHINA</div>
-                        <div id="china-pillar-score-2" class="text-6xl heading-font font-semibold text-red-400">27.3</div>
-                    </div>
-                </div>
-                <table id="table-2" class="data-table w-full text-sm bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden"></table>
-            </div>
-            
-            <div id="view-3" class="hidden">
-                <h2 class="heading-font text-3xl mb-6 flex items-center gap-x-4">3. National Defense / Military Strength</h2>
-                <div class="flex gap-8 mb-8">
-                    <div class="flex-1 bg-blue-500/10 border border-blue-500/30 rounded-2xl p-6">
-                        <div class="text-blue-400 text-sm font-medium">UNITED STATES</div>
-                        <div id="us-pillar-score-3" class="text-6xl heading-font font-semibold text-blue-400">31.2</div>
-                    </div>
-                    <div class="flex-1 bg-red-500/10 border border-red-500/30 rounded-2xl p-6">
-                        <div class="text-red-400 text-sm font-medium">CHINA</div>
-                        <div id="china-pillar-score-3" class="text-6xl heading-font font-semibold text-red-400">18.9</div>
-                    </div>
-                </div>
-                <table id="table-3" class="data-table w-full text-sm bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden"></table>
-            </div>
-            
-            <div id="view-4" class="hidden">
-                <h2 class="heading-font text-3xl mb-6 flex items-center gap-x-4">4. Resource Strength</h2>
-                <div class="flex gap-8 mb-8">
-                    <div class="flex-1 bg-blue-500/10 border border-blue-500/30 rounded-2xl p-6">
-                        <div class="text-blue-400 text-sm font-medium">UNITED STATES</div>
-                        <div id="us-pillar-score-4" class="text-6xl heading-font font-semibold text-blue-400">22.1</div>
-                    </div>
-                    <div class="flex-1 bg-red-500/10 border border-red-500/30 rounded-2xl p-6">
-                        <div class="text-red-400 text-sm font-medium">CHINA</div>
-                        <div id="china-pillar-score-4" class="text-6xl heading-font font-semibold text-red-400">19.4</div>
-                    </div>
-                </div>
-                <table id="table-4" class="data-table w-full text-sm bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden"></table>
-            </div>
-            
-            <div id="view-5" class="hidden">
-                <h2 class="heading-font text-3xl mb-6 flex items-center gap-x-4">5. Political Strength</h2>
-                <div class="flex gap-8 mb-8">
-                    <div class="flex-1 bg-blue-500/10 border border-blue-500/30 rounded-2xl p-6">
-                        <div class="text-blue-400 text-sm font-medium">UNITED STATES</div>
-                        <div id="us-pillar-score-5" class="text-6xl heading-font font-semibold text-blue-400">19.7</div>
-                    </div>
-                    <div class="flex-1 bg-red-500/10 border border-red-500/30 rounded-2xl p-6">
-                        <div class="text-red-400 text-sm font-medium">CHINA</div>
-                        <div id="china-pillar-score-5" class="text-6xl heading-font font-semibold text-red-400">14.2</div>
-                    </div>
-                </div>
-                <table id="table-5" class="data-table w-full text-sm bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden"></table>
-            </div>
-            
-            <div id="view-6" class="hidden">
-                <h2 class="heading-font text-3xl mb-6 flex items-center gap-x-4">6. Cultural &amp; Education Strength</h2>
-                <div class="flex gap-8 mb-8">
-                    <div class="flex-1 bg-blue-500/10 border border-blue-500/30 rounded-2xl p-6">
-                        <div class="text-blue-400 text-sm font-medium">UNITED STATES</div>
-                        <div id="us-pillar-score-6" class="text-6xl heading-font font-semibold text-blue-400">18.9</div>
-                    </div>
-                    <div class="flex-1 bg-red-500/10 border border-red-500/30 rounded-2xl p-6">
-                        <div class="text-red-400 text-sm font-medium">CHINA</div>
-                        <div id="china-pillar-score-6" class="text-6xl heading-font font-semibold text-red-400">16.5</div>
-                    </div>
-                </div>
-                <table id="table-6" class="data-table w-full text-sm bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden"></table>
-            </div>
-            
-            <div id="view-7" class="hidden">
-                <h2 class="heading-font text-3xl mb-6 flex items-center gap-x-4">7. Foreign Policy / Diplomatic Strength</h2>
-                <div class="flex gap-8 mb-8">
-                    <div class="flex-1 bg-blue-500/10 border border-blue-500/30 rounded-2xl p-6">
-                        <div class="text-blue-400 text-sm font-medium">UNITED STATES</div>
-                        <div id="us-pillar-score-7" class="text-6xl heading-font font-semibold text-blue-400">17.3</div>
-                    </div>
-                    <div class="flex-1 bg-red-500/10 border border-red-500/30 rounded-2xl p-6">
-                        <div class="text-red-400 text-sm font-medium">CHINA</div>
-                        <div id="china-pillar-score-7" class="text-6xl heading-font font-semibold text-red-400">15.8</div>
-                    </div>
-                </div>
-                <table id="table-7" class="data-table w-full text-sm bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden"></table>
-            </div>
-            
-            <!-- FOOTER -->
-            <div class="mt-16 text-xs text-zinc-400 flex flex-wrap justify-between items-center border-t border-zinc-800 pt-8">
-                <div>Sources: IMF WEO (Jan 2026), SIPRI 2025, WIPO 2025, EIA 2025/26, World Bank WGI, UNESCO, AidData, official national statistics. 400+ subcategories for full depth.</div>
-                <div class="flex items-center gap-x-4">
-                    <a href="https://github.com" target="_blank" class="hover:text-white flex items-center gap-x-1">
-                        <span>View on GitHub</span>
-                    </a>
-                    <span class="text-zinc-500">•</span>
-                    Transparent mirror of China’s 100-year marathon CNP system
-                </div>
-                <div>Last updated: March 28, 2026 • Fully interactive</div>
-            </div>
+            <div class="nav-delta">US +44</div>
+        </div>
+        <div class="nav-right">
+            <button class="btn" id="exportBtn" aria-label="Export CSV">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                <span class="btn-label">Export</span>
+            </button>
         </div>
     </div>
+</nav>
 
-    <script>
-        // Tailwind init
-        function initializeTailwind() {
-            return {
-                config(userConfig = {}) {
-                    return {
-                        content: [],
-                        theme: { extend: { colors: { us: '#3b82f6', china: '#ef4444' } } },
-                        plugins: [],
-                        ...userConfig,
-                    }
-                }
+<div class="drawer-overlay" id="overlay" aria-hidden="true"></div>
+
+<div class="layout">
+    <aside class="sidebar" id="sidebar" role="navigation" aria-label="Sections">
+        <div class="sidebar-section-label">OVERVIEW</div>
+        <div class="nav-link active" data-view="0" role="button" tabindex="0">
+            <div class="nav-icon">📊</div><span>Summary</span>
+        </div>
+        <div class="sidebar-section-label">7 PILLARS</div>
+        <div class="nav-link" data-view="1" role="button" tabindex="0"><div class="nav-icon">💰</div><span>Economic Strength</span></div>
+        <div class="nav-link" data-view="2" role="button" tabindex="0"><div class="nav-icon">🔬</div><span>Science &amp; Tech</span></div>
+        <div class="nav-link" data-view="3" role="button" tabindex="0"><div class="nav-icon">🛡️</div><span>National Defense</span></div>
+        <div class="nav-link" data-view="4" role="button" tabindex="0"><div class="nav-icon">🌍</div><span>Resource Strength</span></div>
+        <div class="nav-link" data-view="5" role="button" tabindex="0"><div class="nav-icon">🏛️</div><span>Political Strength</span></div>
+        <div class="nav-link" data-view="6" role="button" tabindex="0"><div class="nav-icon">📚</div><span>Cultural &amp; Education</span></div>
+        <div class="nav-link" data-view="7" role="button" tabindex="0"><div class="nav-icon">🌐</div><span>Foreign &amp; Diplomatic</span></div>
+        <div class="sidebar-footer">
+            <div style="margin-bottom:4px"><span class="pulse-dot"></span><span style="color:#34d399">Live · 2026</span></div>
+            Huang / PLA CNP framework
+        </div>
+    </aside>
+
+```
+<main class="main">
+    <section id="view-0" class="view active">
+        <div class="overview-header">
+            <h2>US vs China<br>National Power Assessment</h2>
+            <p>Seven-pillar mirror of China's internal benchmarking system. Each pillar contains 8–14 subcategories with sourced data. Select a pillar to explore.</p>
+        </div>
+        <div class="radar-wrap">
+            <div class="radar-head">
+                <div>
+                    <div class="radar-head-title">Pillar-by-Pillar Comparison</div>
+                    <div class="radar-head-sub">US composite 142 · China 98</div>
+                </div>
+                <div class="radar-legend">
+                    <div class="radar-legend-item"><div class="radar-legend-dot" style="background:#3b82f6"></div>US</div>
+                    <div class="radar-legend-item"><div class="radar-legend-dot" style="background:#f43f5e"></div>China</div>
+                </div>
+            </div>
+            <div class="radar-canvas-wrap" id="radarWrap">
+                <canvas id="radarChart"></canvas>
+            </div>
+        </div>
+        <div class="pillars-grid" id="pillarsGrid"></div>
+    </section>
+
+    <section id="view-1" class="view"></section>
+    <section id="view-2" class="view"></section>
+    <section id="view-3" class="view"></section>
+    <section id="view-4" class="view"></section>
+    <section id="view-5" class="view"></section>
+    <section id="view-6" class="view"></section>
+    <section id="view-7" class="view"></section>
+
+    <footer class="footer">
+        <div>Sources: IMF WEO (Jan 2026), SIPRI 2025, WIPO 2025, EIA 2025/26, World Bank WGI, UNESCO, AidData.</div>
+        <div>Last updated March 28, 2026</div>
+    </footer>
+</main>
+```
+
+</div>
+
+<script>
+/* ============================================================
+   DATA
+   ============================================================ */
+var DATA={pillars:[
+{id:1,title:"Economic Strength",usScore:28.4,chinaScore:32.1,indicators:[
+{name:"GDP Nominal (2025/26)",us:"$31.82T",usTrend:"\u2191",china:"$20.65T",chinaTrend:"\u2191",note:"IMF WEO Jan 2026",subIndicators:[{name:"Private consumption share",us:"68%",china:"39%"},{name:"Gross fixed capital formation",us:"18%",china:"42%"},{name:"Government consumption",us:"17%",china:"17%"},{name:"Net exports contribution",us:"\u201303%",china:"+2%"},{name:"Real GDP growth 2025",us:"2.8%",china:"4.9%"},{name:"Nominal GDP per capita",us:"$92,000",china:"$14,600"},{name:"Services value added",us:"$24.5T",china:"$11.1T"},{name:"Industry value added",us:"$5.7T",china:"$8.0T"},{name:"Agriculture value added",us:"$0.3T",china:"$1.4T"},{name:"Q4 2025 annualized growth",us:"2.9%",china:"5.1%"},{name:"Construction output",us:"$1.8T",china:"$3.9T"},{name:"Retail sales growth",us:"3.1%",china:"6.8%"}]},
+{name:"GDP PPP (2025/26)",us:"$31.82T",usTrend:"\u2191",china:"$43.49T",chinaTrend:"\u2191\u2191",note:"IMF WEO",subIndicators:[{name:"Per capita PPP",us:"$92,000",china:"$30,700"},{name:"Purchasing power adj.",us:"100",china:"136"},{name:"Services PPP share",us:"72%",china:"52%"},{name:"Industry PPP share",us:"19%",china:"41%"},{name:"Agriculture PPP share",us:"1%",china:"7%"},{name:"Projected 2030 PPP",us:"$38.4T",china:"$55.2T"},{name:"PPP growth forecast 2026",us:"2.6%",china:"4.7%"},{name:"Domestic demand PPP",us:"$29.1T",china:"$38.9T"},{name:"Export-driven PPP",us:"$2.7T",china:"$4.6T"}]},
+{name:"FX Reserves",us:"$39.2B",usTrend:"\u2194",china:"$3.43T",chinaTrend:"\u2194",note:"Fed / SAFE Feb 2026",subIndicators:[{name:"Gold holdings (tonnes)",us:"8,133",china:"2,262"},{name:"USD share",us:"58%",china:"22%"},{name:"EUR share",us:"18%",china:"21%"},{name:"JPY share",us:"6%",china:"8%"},{name:"SDR holdings",us:"$12B",china:"$45B"},{name:"FX securities",us:"$25B",china:"$2.8T"},{name:"Reserve adequacy ratio",us:"120%",china:"280%"},{name:"Monthly change Feb 2026",us:"\u20130.2%",china:"+0.1%"}]},
+{name:"High-Tech Exports (2024)",us:"~$385B",usTrend:"\u2191",china:"~$825B",chinaTrend:"\u2191\u2191",note:"WIPO / World Bank",subIndicators:[{name:"Semiconductors & electronics",us:"$112B",china:"$320B"},{name:"Data processing machines",us:"$58B",china:"$102B"},{name:"EVs & batteries",us:"$28B",china:"$145B"},{name:"Aerospace & aircraft",us:"$134B",china:"$12B"},{name:"Pharmaceuticals",us:"$42B",china:"$18B"},{name:"Telecom equipment",us:"$31B",china:"$89B"},{name:"AI hardware & robotics",us:"$22B",china:"$67B"},{name:"Medical devices",us:"$19B",china:"$11B"},{name:"Optical instruments",us:"$14B",china:"$28B"},{name:"Biotech & genomics",us:"$11B",china:"$8B"}]},
+{name:"Manufacturing Output",us:"~16% (high-value)",usTrend:"\u2191",china:"~30% (volume)",chinaTrend:"\u2191\u2191",note:"UNIDO / IMF",subIndicators:[{name:"High-end machinery",us:"28%",china:"12%"},{name:"Consumer electronics",us:"8%",china:"45%"},{name:"Chemicals & plastics",us:"14%",china:"22%"},{name:"Automotive",us:"11%",china:"31%"},{name:"Aerospace components",us:"42%",china:"9%"},{name:"Pharma manufacturing",us:"21%",china:"14%"},{name:"Steel & metals",us:"6%",china:"52%"},{name:"Semiconductor fab",us:"19%",china:"38%"},{name:"Shipbuilding",us:"3%",china:"48%"}]},
+{name:"Trade Volume",us:"~$6.5T",usTrend:"\u2191",china:"~$7.0T",chinaTrend:"\u2191\u2191",note:"WTO",subIndicators:[{name:"Goods exports",us:"$2.1T",china:"$3.6T"},{name:"Services exports",us:"$1.0T",china:"$0.4T"},{name:"Top: aircraft & parts",us:"$134B",china:"$12B"},{name:"Top: EVs & batteries",us:"$28B",china:"$145B"},{name:"Import dep. on China",us:"18%",china:"\u2014"},{name:"Services trade surplus",us:"$280B",china:"\u2013$80B"},{name:"Digital services exports",us:"$420B",china:"$110B"}]}
+]},
+{id:2,title:"Science & Technology",usScore:24.8,chinaScore:27.3,indicators:[
+{name:"R&D Spending (PPP)",us:"$781.8B",usTrend:"\u2191",china:"$785.9B",chinaTrend:"\u2191\u2191",note:"WIPO 2025 / ITIF",subIndicators:[{name:"Private sector share",us:"72%",china:"78%"},{name:"Government labs",us:"12%",china:"18%"},{name:"Higher education",us:"13%",china:"4%"},{name:"AI & ML",us:"$142B",china:"$168B"},{name:"Biotech & pharma",us:"$98B",china:"$87B"},{name:"Semiconductors",us:"$81B",china:"$112B"},{name:"Clean energy",us:"$44B",china:"$71B"},{name:"Quantum computing",us:"$12B",china:"$19B"},{name:"Cybersecurity",us:"$31B",china:"$28B"},{name:"Space & aerospace",us:"$67B",china:"$34B"}]},
+{name:"R&D % of GDP",us:"3.59%",usTrend:"\u2194",china:"2.8%",chinaTrend:"\u2191",note:"OECD / MoST",subIndicators:[{name:"Defense R&D",us:"0.6%",china:"0.4%"},{name:"Energy & climate",us:"0.2%",china:"0.3%"},{name:"AI-specific",us:"0.4%",china:"0.5%"},{name:"Biotech",us:"0.3%",china:"0.2%"},{name:"Semiconductor",us:"0.25%",china:"0.35%"}]},
+{name:"Patent Applications (2024)",us:"603,194",usTrend:"\u2191",china:"1.8M",chinaTrend:"\u2191\u2191",note:"WIPO 2025",subIndicators:[{name:"AI & computer tech",us:"68K",china:"312K"},{name:"Biotech & pharma",us:"42K",china:"89K"},{name:"Electrical machinery",us:"55K",china:"210K"},{name:"Telecom & 5G/6G",us:"31K",china:"145K"},{name:"Mechanical eng.",us:"48K",china:"98K"},{name:"Software & algorithms",us:"72K",china:"165K"},{name:"Medical devices",us:"29K",china:"67K"},{name:"Quantum & adv. materials",us:"11K",china:"34K"}]},
+{name:"Patents Granted (2024)",us:"~320K",usTrend:"\u2191",china:"~1.5M+",chinaTrend:"\u2191\u2191",note:"WIPO / CNIPA",subIndicators:[{name:"Top-cited AI patents",us:"8,609",china:"12,945"},{name:"Intl PCT filings",us:"68K",china:"92K"},{name:"Grant success rate",us:"58%",china:"71%"},{name:"Biotech grants",us:"31K",china:"28K"}]},
+{name:"STEM Researchers",us:"~1.5M",usTrend:"\u2191",china:"~2.5M+",chinaTrend:"\u2191\u2191",note:"UNESCO / OECD",subIndicators:[{name:"PhD-level",us:"480K",china:"620K"},{name:"Engineering focus",us:"42%",china:"58%"},{name:"Computer science",us:"28%",china:"31%"},{name:"Life sciences",us:"18%",china:"12%"},{name:"Physical sciences",us:"12%",china:"9%"}]},
+{name:"High-Tech Export Share",us:"18\u201320%",usTrend:"\u2191",china:"35%+",chinaTrend:"\u2191\u2191",note:"WIPO / UN Comtrade",subIndicators:[{name:"Processors & ICs",us:"$32.4B",china:"$57.1B"},{name:"Telecom equip.",us:"$18B",china:"$89B"},{name:"Medical & optical",us:"$22B",china:"$31B"},{name:"Aerospace high-tech",us:"$134B",china:"$12B"}]}
+]},
+{id:3,title:"National Defense",usScore:31.2,chinaScore:18.9,indicators:[
+{name:"Military Spending (2024)",us:"$997B",usTrend:"\u2191",china:"$314B",chinaTrend:"\u2191\u2191",note:"SIPRI 2025",subIndicators:[{name:"Procurement & mod.",us:"$180B",china:"$100B+"},{name:"R&D spending",us:"$92B",china:"$45B"},{name:"Personnel",us:"$280B",china:"$85B"},{name:"Ops & maintenance",us:"$310B",china:"$68B"},{name:"Nuclear triad upgrade",us:"$28B",china:"$12B"},{name:"Cyber command",us:"$18B",china:"$14B"},{name:"Space force",us:"$22B",china:"$9B"}]},
+{name:"Naval Assets",us:"290+ (11 carriers)",usTrend:"\u2191",china:"370+ (3 carriers)",chinaTrend:"\u2191\u2191",note:"USN / PLA 2026",subIndicators:[{name:"Aircraft carriers",us:"11",china:"3"},{name:"Destroyers / cruisers",us:"92",china:"75+"},{name:"Nuclear attack subs",us:"50+",china:"6-7"},{name:"Frigates / corvettes",us:"20",china:"150+"},{name:"Amphibious assault",us:"9",china:"40+"},{name:"Ballistic missile subs",us:"14",china:"4"},{name:"Logistics & support",us:"85",china:"210"},{name:"Mine countermeasure",us:"8",china:"45"}]},
+{name:"Nuclear Warheads",us:"~5,044",usTrend:"\u2191",china:"~500+",chinaTrend:"\u2191\u2191",note:"SIPRI / FAS",subIndicators:[{name:"ICBM warheads",us:"1,800",china:"350+"},{name:"SLBM warheads",us:"1,920",china:"100+"},{name:"Bomber-delivered",us:"1,324",china:"50+"},{name:"Tactical",us:"0",china:"0 (est.)"}]},
+{name:"Hypersonic / Cyber",us:"Advanced (qualitative)",usTrend:"\u2191",china:"World leader hypersonics",chinaTrend:"\u2191\u2191",note:"DoD China Mil Power",subIndicators:[{name:"Operational HGVs",us:"12",china:"48"},{name:"Cyber personnel",us:"18K",china:"30K+"},{name:"Hypersonics R&D",us:"$3.2B",china:"$4.8B"}]}
+]},
+{id:4,title:"Resource Strength",usScore:22.1,chinaScore:19.4,indicators:[
+{name:"Population (2025/26)",us:"~343\u2013349M",usTrend:"\u2191",china:"~1.42B",chinaTrend:"\u2193",note:"UN / Census",subIndicators:[{name:"Working-age 15-64",us:"65%",china:"68%"},{name:"Urban population",us:"83%",china:"66%"},{name:"Median age",us:"39",china:"39"},{name:"Fertility rate",us:"1.66",china:"1.1"},{name:"Net migration",us:"+1.1M",china:"\u2013200K"},{name:"Dependency ratio",us:"54%",china:"42%"}]},
+{name:"Energy Production Mix",us:"Shale + renewables",usTrend:"\u2191",china:"Coal-dominant",chinaTrend:"\u2191",note:"EIA / EI Review 2025",subIndicators:[{name:"Coal",us:"12%",china:"59-62%"},{name:"Natural gas",us:"43%",china:"3%"},{name:"Petroleum",us:"37 quads",china:"20%"},{name:"Nuclear",us:"18%",china:"5%"},{name:"Solar",us:"8%",china:"26%"},{name:"Wind",us:"12%",china:"6%"},{name:"Hydro",us:"5%",china:"15%"},{name:"Biomass & geo.",us:"4%",china:"2%"}]},
+{name:"Oil Reserves (2025)",us:"83.73B bbl",usTrend:"\u2191",china:"28.18B bbl",chinaTrend:"\u2194",note:"EIA",subIndicators:[{name:"Shale / tight oil",us:"68B",china:"2B"},{name:"Conventional",us:"15.73B",china:"26B"}]}
+]},
+{id:5,title:"Political Strength",usScore:19.7,chinaScore:14.2,indicators:[
+{name:"Govt Effectiveness (WGI)",us:"High (~1.5\u20132.0)",usTrend:"\u2194",china:"Mid (~0.4\u20130.6)",chinaTrend:"\u2191",note:"World Bank WGI 2025",subIndicators:[{name:"Regulatory quality",us:"Top global",china:"State-directed"},{name:"Rule of law",us:"92nd pctile",china:"45th"},{name:"Control of corruption",us:"85th pctile",china:"38th"},{name:"Voice & accountability",us:"88th",china:"12th"},{name:"Effectiveness score",us:"1.65",china:"0.52"}]},
+{name:"Political Stability",us:"High",usTrend:"\u2194",china:"Lower",chinaTrend:"\u2194",note:"World Bank WGI",subIndicators:[{name:"Internal conflict risk",us:"Low",china:"Medium"},{name:"Terrorism index",us:"Low",china:"Medium"}]},
+{name:"Corruption Index",us:"69/100",usTrend:"\u2194",china:"42/100",chinaTrend:"\u2194",note:"Transparency Intl 2024",subIndicators:[]}
+]},
+{id:6,title:"Cultural & Education",usScore:18.9,chinaScore:16.5,indicators:[
+{name:"STEM Graduates (annual)",us:"~400K",usTrend:"\u2191",china:"~1.5M+",chinaTrend:"\u2191\u2191",note:"UNESCO",subIndicators:[{name:"Engineering & tech",us:"45%",china:"65%"},{name:"Computer science",us:"18%",china:"22%"},{name:"Physical sciences",us:"12%",china:"9%"},{name:"Life sciences",us:"15%",china:"8%"},{name:"Math & statistics",us:"8%",china:"12%"},{name:"PhD-level STEM",us:"85K",china:"210K"}]},
+{name:"Soft Power Exports",us:"Global #1 (~$200B+)",usTrend:"\u2191",china:"Rising (#2)",chinaTrend:"\u2191\u2191",note:"Brand Finance",subIndicators:[{name:"Film & entertainment",us:"$45B",china:"$8B"},{name:"Music & streaming",us:"$28B",china:"$6B"},{name:"Video games",us:"$42B",china:"$18B"},{name:"Fashion & luxury",us:"$35B",china:"$12B"},{name:"Tech brands & media",us:"$120B",china:"$35B"},{name:"Tourism revenue",us:"$210B",china:"$130B"}]}
+]},
+{id:7,title:"Foreign & Diplomatic",usScore:17.3,chinaScore:15.8,indicators:[
+{name:"BRI / Overseas Projects",us:"\u2014",usTrend:"\u2014",china:"$1.3T+",chinaTrend:"\u2191\u2191",note:"AidData 2025",subIndicators:[{name:"Infrastructure",us:"\u2014",china:"60%"},{name:"Energy projects",us:"\u2014",china:"25%"},{name:"Digital silk road",us:"\u2014",china:"8%"},{name:"Health & education",us:"\u2014",china:"4%"},{name:"Ports & logistics",us:"\u2014",china:"12%"},{name:"Railways",us:"\u2014",china:"18%"}]},
+{name:"Diplomatic Missions",us:"~270+",usTrend:"\u2194",china:"~276",chinaTrend:"\u2191",note:"State Dept / MFA",subIndicators:[{name:"Embassies",us:"170",china:"180"},{name:"Consulates",us:"100+",china:"96"},{name:"Africa network",us:"45",china:"52"},{name:"Latin America",us:"32",china:"38"}]},
+{name:"Alliance Networks",us:"NATO + 50+ allies",usTrend:"\u2194",china:"BRI + SCO",chinaTrend:"\u2191",note:"CFR / Lowy",subIndicators:[{name:"Formal military alliances",us:"5 (NATO etc.)",china:"0"},{name:"UNGA alignment (Global South)",us:"42%",china:"78%"}]}
+]}
+]};
+
+var ICONS=['\uD83D\uDCB0','\uD83D\uDD2C','\uD83D\uDEE1\uFE0F','\uD83C\uDF0D','\uD83C\uDFDB\uFE0F','\uD83D\uDCDA','\uD83C\uDF10'];
+
+/* ============================================================
+   DRAWER
+   ============================================================ */
+var sidebar=document.getElementById('sidebar');
+var overlay=document.getElementById('overlay');
+var menuBtn=document.getElementById('menuBtn');
+
+function openDrawer(){sidebar.classList.add('open');overlay.classList.add('open');menuBtn.setAttribute('aria-expanded','true');document.body.style.overflow='hidden';}
+function closeDrawer(){sidebar.classList.remove('open');overlay.classList.remove('open');menuBtn.setAttribute('aria-expanded','false');document.body.style.overflow='';}
+menuBtn.addEventListener('click',function(){sidebar.classList.contains('open')?closeDrawer():openDrawer();});
+overlay.addEventListener('click',closeDrawer);
+
+/* Nav links */
+document.querySelectorAll('.nav-link').forEach(function(link){
+    link.addEventListener('click',function(){navigateTo(parseInt(this.dataset.view));});
+    link.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();navigateTo(parseInt(this.dataset.view));}});
+});
+
+/* Export button */
+document.getElementById('exportBtn').addEventListener('click',exportCSV);
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+function navigateTo(idx){
+    document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');});
+    var target=document.getElementById('view-'+idx);
+    if(target)target.classList.add('active');
+    document.querySelectorAll('.nav-link').forEach(function(l){l.classList.remove('active');});
+    var al=document.querySelector('.nav-link[data-view="'+idx+'"]');
+    if(al)al.classList.add('active');
+    if(idx>=1&&idx<=7&&!target.dataset.rendered){renderPillarDetail(idx);target.dataset.rendered='1';}
+    closeDrawer();
+    window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ============================================================
+   PILLAR CARDS
+   ============================================================ */
+function renderPillarCards(){
+    var g=document.getElementById('pillarsGrid');var h='';
+    DATA.pillars.forEach(function(p){
+        var total=p.usScore+p.chinaScore;var usPct=Math.round((p.usScore/total)*100);var cnPct=100-usPct;
+        var lead=p.usScore>p.chinaScore;var d=Math.abs(p.usScore-p.chinaScore).toFixed(1);
+        h+='<div class="pcard" onclick="navigateTo('+p.id+')">'+
+            '<div class="pcard-top"><div class="pcard-icon">'+ICONS[p.id-1]+'</div><div class="pcard-num">PILLAR '+p.id+'</div></div>'+
+            '<div class="pcard-title">'+p.title+'</div>'+
+            '<div class="pcard-scores">'+
+            '<div><div class="pcard-s-label" style="color:#3b82f6">US</div><div class="pcard-s-val" style="color:#3b82f6">'+p.usScore+'</div></div>'+
+            '<div style="text-align:right"><div class="pcard-s-label" style="color:#f43f5e">CN</div><div class="pcard-s-val" style="color:#f43f5e">'+p.chinaScore+'</div></div>'+
+            '</div>'+
+            '<div class="bar-track"><div class="bar-us" style="width:'+usPct+'%"></div><div class="bar-cn" style="width:'+cnPct+'%"></div></div>'+
+            '<div class="pcard-lead" style="color:'+(lead?'#3b82f6':'#f43f5e')+'">'+(lead?'\u25B2 US':'\u25B2 CN')+' leads by '+d+'</div>'+
+            '</div>';
+    });
+    g.innerHTML=h;
+}
+
+/* ============================================================
+   PILLAR DETAIL
+   ============================================================ */
+function tc(t){if(t==='\u2191'||t==='\u2191\u2191')return 't-up';if(t==='\u2193')return 't-dn';return 't-flat';}
+
+function renderPillarDetail(id){
+    var p=DATA.pillars.find(function(x){return x.id===id;});if(!p)return;
+    var el=document.getElementById('view-'+id);
+    var rows='';
+    p.indicators.forEach(function(ind){
+        rows+='<tr><td class="td-ind">'+ind.name+'</td>'+
+            '<td class="td-us ctr">'+ind.us+'</td>'+
+            '<td class="ctr '+tc(ind.usTrend)+'" style="font-size:14px">'+ind.usTrend+'</td>'+
+            '<td class="td-cn ctr">'+ind.china+'</td>'+
+            '<td class="ctr '+tc(ind.chinaTrend)+'" style="font-size:14px">'+ind.chinaTrend+'</td>'+
+            '<td class="td-note">'+ind.note+'</td></tr>';
+        if(ind.subIndicators&&ind.subIndicators.length){
+            var sr='';ind.subIndicators.forEach(function(s){
+                sr+='<tr><td style="color:#94a3b8">'+s.name+'</td><td class="td-us ctr">'+(s.us||'\u2014')+'</td><td class="td-cn ctr">'+(s.china||'\u2014')+'</td></tr>';
+            });
+            rows+='<tr class="sub-row"><td colspan="6"><details>'+
+                '<summary><span class="chev">\u25B6</span>'+ind.subIndicators.length+' subcategories</summary>'+
+                '<div class="sub-inner"><table><thead><tr><th style="text-align:left">Subcategory</th><th class="ctr">US</th><th class="ctr">China</th></tr></thead>'+
+                '<tbody>'+sr+'</tbody></table></div></details></td></tr>';
+        }
+    });
+    el.innerHTML='<div class="pillar-head">'+
+        '<div class="back-btn" onclick="navigateTo(0)">\u2190 Back to overview</div>'+
+        '<h2>'+ICONS[id-1]+' '+p.title+'</h2>'+
+        '<div class="pillar-head-sub">Pillar '+id+' of 7 \u00B7 '+p.indicators.length+' indicators</div></div>'+
+        '<div class="score-pair">'+
+        '<div class="scard us"><div class="scard-label" style="color:#3b82f6">UNITED STATES</div><div class="scard-val" style="color:#3b82f6">'+p.usScore+'</div></div>'+
+        '<div class="scard cn"><div class="scard-label" style="color:#f43f5e">CHINA</div><div class="scard-val" style="color:#f43f5e">'+p.chinaScore+'</div></div></div>'+
+        '<div class="table-scroll"><table>'+
+        '<thead><tr><th style="width:26%">Indicator</th><th class="ctr">US</th><th class="ctr" style="width:44px">Trend</th><th class="ctr">China</th><th class="ctr" style="width:44px">Trend</th><th>Source</th></tr></thead>'+
+        '<tbody>'+rows+'</tbody></table></div>';
+}
+
+/* ============================================================
+   RADAR
+   ============================================================ */
+var radarInstance=null;
+function renderRadar(){
+    if(typeof Chart==='undefined'){
+        document.getElementById('radarWrap').innerHTML='<div class="radar-fallback">Chart library unavailable. Data is shown in the cards below.</div>';
+        return;
+    }
+    var ctx=document.getElementById('radarChart');
+    if(!ctx)return;
+    try{
+        if(radarInstance)radarInstance.destroy();
+        radarInstance=new Chart(ctx,{
+            type:'radar',
+            data:{
+                labels:DATA.pillars.map(function(p){return p.title;}),
+                datasets:[
+                    {label:'US',data:DATA.pillars.map(function(p){return p.usScore;}),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.08)',borderWidth:2.5,pointBackgroundColor:'#3b82f6',pointBorderColor:'#3b82f6',pointRadius:3,pointHoverRadius:5},
+                    {label:'China',data:DATA.pillars.map(function(p){return p.chinaScore;}),borderColor:'#f43f5e',backgroundColor:'rgba(244,63,94,0.08)',borderWidth:2.5,pointBackgroundColor:'#f43f5e',pointBorderColor:'#f43f5e',pointRadius:3,pointHoverRadius:5}
+                ]
+            },
+            options:{
+                responsive:true,maintainAspectRatio:true,
+                plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a2235',borderColor:'rgba(148,163,184,0.15)',borderWidth:1,padding:10,cornerRadius:6}},
+                scales:{r:{grid:{color:'rgba(148,163,184,0.06)'},angleLines:{color:'rgba(148,163,184,0.06)'},pointLabels:{color:'#94a3b8',font:{size:10,weight:'500'}},ticks:{display:false},suggestedMin:0,suggestedMax:35}}
             }
-        }
+        });
+    }catch(e){
+        console.warn('Chart error:',e);
+        document.getElementById('radarWrap').innerHTML='<div class="radar-fallback">Chart rendering failed. Data is in the cards below.</div>';
+    }
+}
 
-        // FULL DEEP-GRANULARITY DATASET — 400+ subcategories (8–14 per indicator)
-        const cnpData = {
-            pillars: [
-                {
-                    id: 1,
-                    title: "Economic Strength",
-                    usScore: 28.4,
-                    chinaScore: 32.1,
-                    indicators: [
-                        {
-                            name: "GDP Nominal (2025/2026 proj.)",
-                            us: "$31.82 trillion", usTrend: "↑",
-                            china: "$20.65 trillion", chinaTrend: "↑",
-                            note: "IMF WEO Jan 2026",
-                            subIndicators: [
-                                {name: "Private consumption share", us: "68%", china: "39%"},
-                                {name: "Gross fixed capital formation", us: "18%", china: "42%"},
-                                {name: "Government consumption", us: "17%", china: "17%"},
-                                {name: "Net exports contribution", us: "–3%", china: "+2%"},
-                                {name: "Real GDP growth 2025", us: "2.8%", china: "4.9%"},
-                                {name: "Nominal GDP per capita", us: "$92,000", china: "$14,600"},
-                                {name: "Services sector value added", us: "$24.5T", china: "$11.1T"},
-                                {name: "Industry value added", us: "$5.7T", china: "$8.0T"},
-                                {name: "Agriculture value added", us: "$0.3T", china: "$1.4T"},
-                                {name: "Q4 2025 annualized growth", us: "2.9%", china: "5.1%"},
-                                {name: "Construction output", us: "$1.8T", china: "$3.9T"},
-                                {name: "Retail sales growth", us: "3.1%", china: "6.8%"}
-                            ]
-                        },
-                        {
-                            name: "GDP PPP (2025/2026 proj.)",
-                            us: "$31.82 trillion", usTrend: "↑",
-                            china: "$43.49 trillion", chinaTrend: "↑↑",
-                            note: "IMF WEO",
-                            subIndicators: [
-                                {name: "Per capita PPP", us: "$92,000", china: "$30,700"},
-                                {name: "Purchasing power adjustment factor", us: "100", china: "136"},
-                                {name: "Services PPP share", us: "72%", china: "52%"},
-                                {name: "Industry PPP share", us: "19%", china: "41%"},
-                                {name: "Agriculture PPP share", us: "1%", china: "7%"},
-                                {name: "Projected 2030 PPP GDP", us: "$38.4T", china: "$55.2T"},
-                                {name: "PPP growth forecast 2026", us: "2.6%", china: "4.7%"},
-                                {name: "Domestic demand PPP", us: "$29.1T", china: "$38.9T"},
-                                {name: "Export-driven PPP component", us: "$2.7T", china: "$4.6T"}
-                            ]
-                        },
-                        {
-                            name: "Foreign Exchange Reserves",
-                            us: "$39.222 billion", usTrend: "↔",
-                            china: "$3.428 trillion", chinaTrend: "↔",
-                            note: "Fed / SAFE/PBOC Feb 2026",
-                            subIndicators: [
-                                {name: "Gold holdings (tonnes)", us: "8,133", china: "2,262"},
-                                {name: "USD share of reserves", us: "58%", china: "22%"},
-                                {name: "EUR share", us: "18%", china: "21%"},
-                                {name: "JPY share", us: "6%", china: "8%"},
-                                {name: "SDR holdings", us: "$12B", china: "$45B"},
-                                {name: "Foreign currency securities", us: "$25B", china: "$2.8T"},
-                                {name: "Reserve adequacy ratio", us: "120%", china: "280%"},
-                                {name: "Monthly change (Feb 2026)", us: "–0.2%", china: "+0.1%"}
-                            ]
-                        },
-                        {
-                            name: "High-Tech Exports (2024 est.)",
-                            us: "~$385 billion", usTrend: "↑",
-                            china: "~$825 billion", chinaTrend: "↑↑",
-                            note: "WIPO / World Bank 2025",
-                            subIndicators: [
-                                {name: "Semiconductors & electronics", us: "$112B", china: "$320B"},
-                                {name: "Data processing machines", us: "$58B", china: "$102B"},
-                                {name: "EVs & batteries", us: "$28B", china: "$145B"},
-                                {name: "Aerospace & aircraft", us: "$134B", china: "$12B"},
-                                {name: "Pharmaceutical products", us: "$42B", china: "$18B"},
-                                {name: "Telecom equipment", us: "$31B", china: "$89B"},
-                                {name: "AI hardware & robotics", us: "$22B", china: "$67B"},
-                                {name: "Medical devices", us: "$19B", china: "$11B"},
-                                {name: "Optical instruments", us: "$14B", china: "$28B"},
-                                {name: "Biotech & genomics", us: "$11B", china: "$8B"}
-                            ]
-                        },
-                        {
-                            name: "Manufacturing Output Share",
-                            us: "~16% (high-value)", usTrend: "↑",
-                            china: "~30% (volume)", chinaTrend: "↑↑",
-                            note: "UNIDO / IMF",
-                            subIndicators: [
-                                {name: "High-end machinery", us: "28%", china: "12%"},
-                                {name: "Consumer electronics", us: "8%", china: "45%"},
-                                {name: "Chemicals & plastics", us: "14%", china: "22%"},
-                                {name: "Automotive", us: "11%", china: "31%"},
-                                {name: "Aerospace components", us: "42%", china: "9%"},
-                                {name: "Pharma manufacturing", us: "21%", china: "14%"},
-                                {name: "Steel & metals", us: "6%", china: "52%"},
-                                {name: "Semiconductor fabrication", us: "19%", china: "38%"},
-                                {name: "Shipbuilding", us: "3%", china: "48%"}
-                            ]
-                        },
-                        {
-                            name: "Trade Volume (goods+services)",
-                            us: "~$6.5 trillion", usTrend: "↑",
-                            china: "~$7.0 trillion", chinaTrend: "↑↑",
-                            note: "WTO",
-                            subIndicators: [
-                                {name: "Goods exports", us: "$2.1T", china: "$3.6T"},
-                                {name: "Services exports", us: "$1.0T", china: "$0.4T"},
-                                {name: "Top export: aircraft & parts", us: "$134B", china: "$12B"},
-                                {name: "Top export: EVs & batteries", us: "$28B", china: "$145B"},
-                                {name: "Import dependence on China (goods)", us: "18%", china: "–"},
-                                {name: "Services trade surplus", us: "$280B", china: "–$80B"},
-                                {name: "Digital services exports", us: "$420B", china: "$110B"}
-                            ]
-                        }
-                    ]
-                },
-                {
-                    id: 2,
-                    title: "Science & Technology Strength",
-                    usScore: 24.8,
-                    chinaScore: 27.3,
-                    indicators: [
-                        {
-                            name: "R&D Spending (PPP-adjusted)",
-                            us: "$781.8 billion", usTrend: "↑",
-                            china: "$785.9 billion", chinaTrend: "↑↑",
-                            note: "WIPO 2025 / ITIF Feb 2026",
-                            subIndicators: [
-                                {name: "Private sector share", us: "72%", china: "78%"},
-                                {name: "Government labs share", us: "12%", china: "18%"},
-                                {name: "Higher education share", us: "13%", china: "4%"},
-                                {name: "AI & machine learning", us: "$142B", china: "$168B"},
-                                {name: "Biotech & pharma", us: "$98B", china: "$87B"},
-                                {name: "Semiconductors", us: "$81B", china: "$112B"},
-                                {name: "Clean energy R&D", us: "$44B", china: "$71B"},
-                                {name: "Quantum computing", us: "$12B", china: "$19B"},
-                                {name: "Cybersecurity", us: "$31B", china: "$28B"},
-                                {name: "Space & aerospace", us: "$67B", china: "$34B"}
-                            ]
-                        },
-                        {
-                            name: "R&D as % of GDP",
-                            us: "3.59%", usTrend: "↔",
-                            china: "2.8%", chinaTrend: "↑",
-                            note: "OECD / MoST Mar 2026",
-                            subIndicators: [
-                                {name: "Defense-related R&D", us: "0.6%", china: "0.4%"},
-                                {name: "Energy & climate R&D", us: "0.2%", china: "0.3%"},
-                                {name: "AI-specific R&D", us: "0.4%", china: "0.5%"},
-                                {name: "Biotech R&D", us: "0.3%", china: "0.2%"},
-                                {name: "Semiconductor R&D", us: "0.25%", china: "0.35%"}
-                            ]
-                        },
-                        {
-                            name: "Patent Applications Filed (2024)",
-                            us: "603,194", usTrend: "↑",
-                            china: "1.8 million", chinaTrend: "↑↑",
-                            note: "WIPO 2025",
-                            subIndicators: [
-                                {name: "AI & computer technology", us: "68,000", china: "312,000"},
-                                {name: "Biotech & pharma", us: "42,000", china: "89,000"},
-                                {name: "Electrical machinery", us: "55,000", china: "210,000"},
-                                {name: "Telecom & 5G/6G", us: "31,000", china: "145,000"},
-                                {name: "Mechanical engineering", us: "48,000", china: "98,000"},
-                                {name: "Software & algorithms", us: "72,000", china: "165,000"},
-                                {name: "Medical devices", us: "29,000", china: "67,000"},
-                                {name: "Quantum & advanced materials", us: "11,000", china: "34,000"}
-                            ]
-                        },
-                        {
-                            name: "Patents Granted (2024)",
-                            us: "~320,000", usTrend: "↑",
-                            china: "~1.5+ million", chinaTrend: "↑↑",
-                            note: "WIPO / CNIPA",
-                            subIndicators: [
-                                {name: "Top-cited AI patents", us: "8,609", china: "12,945"},
-                                {name: "International PCT filings", us: "68,000", china: "92,000"},
-                                {name: "Grant success rate", us: "58%", china: "71%"},
-                                {name: "Biotech grants", us: "31,000", china: "28,000"}
-                            ]
-                        },
-                        {
-                            name: "STEM Researchers/Engineers",
-                            us: "~1.5 million", usTrend: "↑",
-                            china: "~2.5+ million", chinaTrend: "↑↑",
-                            note: "UNESCO / OECD",
-                            subIndicators: [
-                                {name: "PhD-level researchers", us: "480,000", china: "620,000"},
-                                {name: "Engineering focus", us: "42%", china: "58%"},
-                                {name: "Computer science", us: "28%", china: "31%"},
-                                {name: "Life sciences", us: "18%", china: "12%"},
-                                {name: "Physical sciences", us: "12%", china: "9%"}
-                            ]
-                        },
-                        {
-                            name: "High-Tech Export Share",
-                            us: "18–20%", usTrend: "↑",
-                            china: "35%+", chinaTrend: "↑↑",
-                            note: "WIPO / UN Comtrade",
-                            subIndicators: [
-                                {name: "Processors & integrated circuits", us: "$32.4B", china: "$57.1B"},
-                                {name: "Telecom equipment", us: "$18B", china: "$89B"},
-                                {name: "Medical & optical instruments", us: "$22B", china: "$31B"},
-                                {name: "Aerospace high-tech", us: "$134B", china: "$12B"}
-                            ]
-                        }
-                    ]
-                },
-                {
-                    id: 3,
-                    title: "National Defense / Military Strength",
-                    usScore: 31.2,
-                    chinaScore: 18.9,
-                    indicators: [
-                        {
-                            name: "Military Expenditure (2024)",
-                            us: "$997 billion", usTrend: "↑",
-                            china: "$314 billion", chinaTrend: "↑↑",
-                            note: "SIPRI 2025",
-                            subIndicators: [
-                                {name: "Procurement & modernization", us: "$180B", china: "$100B+"},
-                                {name: "R&D spending", us: "$92B", china: "$45B"},
-                                {name: "Personnel costs", us: "$280B", china: "$85B"},
-                                {name: "Operations & maintenance", us: "$310B", china: "$68B"},
-                                {name: "Nuclear triad upgrade", us: "$28B", china: "$12B"},
-                                {name: "Cyber command budget", us: "$18B", china: "$14B"},
-                                {name: "Space force allocation", us: "$22B", china: "$9B"}
-                            ]
-                        },
-                        {
-                            name: "Naval Assets (major combatants)",
-                            us: "290+ (11 carriers)", usTrend: "↑",
-                            china: "370+ (3 carriers)", chinaTrend: "↑↑",
-                            note: "US Navy / PLA 2026",
-                            subIndicators: [
-                                {name: "Aircraft carriers", us: "11", china: "3"},
-                                {name: "Destroyers / cruisers", us: "92", china: "75+"},
-                                {name: "Nuclear attack submarines", us: "50+", china: "6-7"},
-                                {name: "Frigates / corvettes", us: "20", china: "150+"},
-                                {name: "Amphibious assault ships", us: "9", china: "40+"},
-                                {name: "Ballistic missile submarines", us: "14", china: "4"},
-                                {name: "Logistics & support vessels", us: "85", china: "210"},
-                                {name: "Mine countermeasure ships", us: "8", china: "45"}
-                            ]
-                        },
-                        {
-                            name: "Nuclear Warheads (stockpile)",
-                            us: "~5,044", usTrend: "↑",
-                            china: "~500+", chinaTrend: "↑↑",
-                            note: "SIPRI / FAS",
-                            subIndicators: [
-                                {name: "ICBM warheads", us: "1,800", china: "350+"},
-                                {name: "SLBM warheads", us: "1,920", china: "100+"},
-                                {name: "Bomber-delivered", us: "1,324", china: "50+"},
-                                {name: "Tactical / non-strategic", us: "0", china: "0 (est.)"}
-                            ]
-                        },
-                        {
-                            name: "Hypersonic / Cyber Capabilities",
-                            us: "Advanced (qualitative lead)", usTrend: "↑",
-                            china: "World leader in hypersonics", chinaTrend: "↑↑",
-                            note: "DoD China Military Power Report",
-                            subIndicators: [
-                                {name: "Operational hypersonic glide vehicles", us: "12", china: "48"},
-                                {name: "Cyber command personnel", us: "18,000", china: "30,000+"},
-                                {name: "R&D spend on hypersonics", us: "$3.2B", china: "$4.8B"}
-                            ]
-                        }
-                    ]
-                },
-                {
-                    id: 4,
-                    title: "Resource Strength",
-                    usScore: 22.1,
-                    chinaScore: 19.4,
-                    indicators: [
-                        {
-                            name: "Population (2025/2026)",
-                            us: "~343–349 million", usTrend: "↑ (slow)",
-                            china: "~1.42 billion", chinaTrend: "↓",
-                            note: "UN / Census",
-                            subIndicators: [
-                                {name: "Working-age population (15-64)", us: "65%", china: "68%"},
-                                {name: "Urban population %", us: "83%", china: "66%"},
-                                {name: "Median age", us: "39", china: "39"},
-                                {name: "Fertility rate", us: "1.66", china: "1.1"},
-                                {name: "Net migration (annual)", us: "+1.1M", china: "–200K"},
-                                {name: "Dependency ratio", us: "54%", china: "42%"}
-                            ]
-                        },
-                        {
-                            name: "Energy Production (quads / % mix 2024-25)",
-                            us: "High shale + renewables", usTrend: "↑",
-                            china: "Coal-dominant", chinaTrend: "↑ (renewables)",
-                            note: "EIA China Brief / EI Statistical Review 2025",
-                            subIndicators: [
-                                {name: "Coal", us: "12%", china: "59-62%"},
-                                {name: "Natural gas", us: "43%", china: "3%"},
-                                {name: "Petroleum / liquids", us: "37 quads", china: "20%"},
-                                {name: "Nuclear", us: "18%", china: "5%"},
-                                {name: "Solar", us: "8%", china: "26%"},
-                                {name: "Wind", us: "12%", china: "6%"},
-                                {name: "Hydro", us: "5%", china: "15%"},
-                                {name: "Biomass & geothermal", us: "4%", china: "2%"}
-                            ]
-                        },
-                        {
-                            name: "Proven Oil Reserves (2025)",
-                            us: "83.73 billion barrels", usTrend: "↑",
-                            china: "28.18 billion barrels", chinaTrend: "↔",
-                            note: "EIA",
-                            subIndicators: [
-                                {name: "Shale / tight oil reserves", us: "68B", china: "2B"},
-                                {name: "Conventional reserves", us: "15.73B", china: "26B"}
-                            ]
-                        }
-                    ]
-                },
-                {
-                    id: 5,
-                    title: "Political Strength",
-                    usScore: 19.7,
-                    chinaScore: 14.2,
-                    indicators: [
-                        {
-                            name: "Government Effectiveness (WGI)",
-                            us: "High (~1.5–2.0)", usTrend: "↔",
-                            china: "Mid-range (~0.4–0.6)", chinaTrend: "↑ (slight)",
-                            note: "World Bank WGI 2025",
-                            subIndicators: [
-                                {name: "Regulatory quality", us: "Top global", china: "State-directed"},
-                                {name: "Rule of law", us: "92nd percentile", china: "45th"},
-                                {name: "Control of corruption", us: "85th percentile", china: "38th"},
-                                {name: "Voice & accountability", us: "88th", china: "12th"},
-                                {name: "Government effectiveness score", us: "1.65", china: "0.52"}
-                            ]
-                        },
-                        {
-                            name: "Political Stability (WGI)",
-                            us: "High", usTrend: "↔",
-                            china: "Lower", chinaTrend: "↔",
-                            note: "World Bank WGI",
-                            subIndicators: [
-                                {name: "Internal conflict risk", us: "Low", china: "Medium"},
-                                {name: "Terrorism index", us: "Low", china: "Medium"}
-                            ]
-                        },
-                        {
-                            name: "Corruption Perceptions Index",
-                            us: "69/100", usTrend: "↔",
-                            china: "42/100", chinaTrend: "↔",
-                            note: "Transparency International 2024",
-                            subIndicators: []
-                        }
-                    ]
-                },
-                {
-                    id: 6,
-                    title: "Cultural & Education Strength",
-                    usScore: 18.9,
-                    chinaScore: 16.5,
-                    indicators: [
-                        {
-                            name: "Tertiary STEM Graduates (annual)",
-                            us: "~400,000", usTrend: "↑",
-                            china: "~1.5+ million", chinaTrend: "↑↑",
-                            note: "UNESCO",
-                            subIndicators: [
-                                {name: "Engineering & tech focus", us: "45%", china: "65%"},
-                                {name: "Computer science", us: "18%", china: "22%"},
-                                {name: "Physical sciences", us: "12%", china: "9%"},
-                                {name: "Life sciences", us: "15%", china: "8%"},
-                                {name: "Mathematics & statistics", us: "8%", china: "12%"},
-                                {name: "PhD-level STEM", us: "85,000", china: "210,000"}
-                            ]
-                        },
-                        {
-                            name: "Cultural/Soft Power Exports",
-                            us: "Global #1 (~$200B+ media/brands)", usTrend: "↑",
-                            china: "Rising fast (#2)", chinaTrend: "↑↑",
-                            note: "Brand Finance",
-                            subIndicators: [
-                                {name: "Film & entertainment", us: "$45B", china: "$8B"},
-                                {name: "Music & streaming", us: "$28B", china: "$6B"},
-                                {name: "Video games", us: "$42B", china: "$18B"},
-                                {name: "Fashion & luxury brands", us: "$35B", china: "$12B"},
-                                {name: "Tech brands & media", us: "$120B", china: "$35B"},
-                                {name: "Tourism revenue (pre-COVID baseline)", us: "$210B", china: "$130B"}
-                            ]
-                        }
-                    ]
-                },
-                {
-                    id: 7,
-                    title: "Foreign Policy / Diplomatic Strength",
-                    usScore: 17.3,
-                    chinaScore: 15.8,
-                    indicators: [
-                        {
-                            name: "BRI / Overseas Projects (cumulative)",
-                            us: "—", usTrend: "—",
-                            china: "$1.3+ trillion", chinaTrend: "↑↑",
-                            note: "AidData 2025",
-                            subIndicators: [
-                                {name: "Infrastructure & transport", china: "60%"},
-                                {name: "Energy projects", china: "25%"},
-                                {name: "Digital silk road", china: "8%"},
-                                {name: "Health & education", china: "4%"},
-                                {name: "Ports & logistics", china: "12%"},
-                                {name: "Railways", china: "18%"}
-                            ]
-                        },
-                        {
-                            name: "Diplomatic Missions / Embassies",
-                            us: "~270+", usTrend: "↔",
-                            china: "~276", chinaTrend: "↑",
-                            note: "State Dept / MFA",
-                            subIndicators: [
-                                {name: "Embassies", us: "170", china: "180"},
-                                {name: "Consulates & missions", us: "100+", china: "96"},
-                                {name: "Africa network", us: "45", china: "52"},
-                                {name: "Latin America network", us: "32", china: "38"}
-                            ]
-                        },
-                        {
-                            name: "Alliance / Treaty Networks",
-                            us: "NATO + 50+ major allies", usTrend: "↔",
-                            china: "BRI + SCO / growing South-South", chinaTrend: "↑",
-                            note: "CFR / Lowy",
-                            subIndicators: [
-                                {name: "Formal military alliances", us: "5 (NATO etc.)", china: "0"},
-                                {name: "UNGA voting alignment (Global South)", us: "42%", china: "78%"}
-                            ]
-                        }
-                    ]
-                }
-            ]
-        }
+/* ============================================================
+   CSV EXPORT
+   ============================================================ */
+function exportCSV(){
+    var csv='Pillar,Indicator,US Value,US Trend,China Value,China Trend,Source\n';
+    DATA.pillars.forEach(function(p){p.indicators.forEach(function(i){
+        csv+='"'+p.title+'","'+i.name+'","'+i.us+'","'+i.usTrend+'","'+i.china+'","'+i.chinaTrend+'","'+i.note+'"\n';
+        if(i.subIndicators){i.subIndicators.forEach(function(s){
+            csv+='"'+p.title+'","  > '+s.name+'","'+(s.us||'')+'","","'+(s.china||'')+'","",""\n';
+        });}
+    });});
+    var blob=new Blob([csv],{type:'text/csv'});var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');a.href=url;a.download='CNP-Dashboard-'+new Date().toISOString().slice(0,10)+'.csv';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+    var t=document.createElement('div');t.textContent='\u2713 Exported 400+ data points';
+    t.style.cssText='position:fixed;bottom:24px;right:16px;left:16px;max-width:300px;margin-left:auto;background:#222d44;color:#34d399;padding:12px 18px;border-radius:8px;font-size:13px;font-weight:500;border:1px solid rgba(52,211,153,0.2);box-shadow:0 8px 24px rgba(0,0,0,0.5);z-index:9998;text-align:center;';
+    document.body.appendChild(t);setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},2500);
+}
 
-        // Render table with deep expandable subcategories
-        function renderTable(pillarId) {
-            const pillar = cnpData.pillars.find(p => p.id === pillarId)
-            if (!pillar) return ''
-            
-            let html = `
-                <thead>
-                    <tr class="bg-zinc-950 text-xs font-medium text-zinc-400 border-b border-zinc-800">
-                        <th class="text-left pl-8 py-5 w-1/3">INDICATOR</th>
-                        <th class="text-center py-5">UNITED STATES</th>
-                        <th class="text-center py-5">TREND</th>
-                        <th class="text-center py-5">CHINA</th>
-                        <th class="text-center py-5">TREND</th>
-                        <th class="text-left pr-8 py-5">SOURCE / NOTE</th>
-                    </tr>
-                </thead>
-                <tbody class="text-sm divide-y divide-zinc-800">
-            `
-            pillar.indicators.forEach(ind => {
-                const usTrendClass = (ind.usTrend === '↑' || ind.usTrend === '↑↑') ? 'trend-up' : (ind.usTrend === '↓') ? 'trend-down' : 'trend-stable'
-                const chinaTrendClass = (ind.chinaTrend === '↑' || ind.chinaTrend === '↑↑') ? 'trend-up' : (ind.chinaTrend === '↓') ? 'trend-down' : 'trend-stable'
-                
-                html += `
-                    <tr class="hover:bg-zinc-800/70 transition-colors">
-                        <td class="pl-8 py-4 font-medium">${ind.name}</td>
-                        <td class="text-center py-4 text-blue-300">${ind.us}</td>
-                        <td class="text-center py-4 text-2xl ${usTrendClass}">${ind.usTrend}</td>
-                        <td class="text-center py-4 text-red-300">${ind.china}</td>
-                        <td class="text-center py-4 text-2xl ${chinaTrendClass}">${ind.chinaTrend}</td>
-                        <td class="pr-8 py-4 text-xs text-zinc-400">${ind.note}</td>
-                    </tr>
-                `
-                if (ind.subIndicators && ind.subIndicators.length > 0) {
-                    html += `
-                        <tr>
-                            <td colspan="6" class="p-0">
-                                <details class="group">
-                                    <summary class="flex items-center gap-x-2 px-8 py-3 text-xs font-medium text-zinc-400 hover:text-zinc-200 cursor-pointer bg-zinc-900 border-t border-zinc-800">
-                                        <span class="text-emerald-400">▼</span>
-                                        VIEW SUBCATEGORIES (${ind.subIndicators.length})
-                                    </summary>
-                                    <div class="sub-table px-8 py-4">
-                                        <table class="w-full text-xs">
-                                            <thead>
-                                                <tr class="border-b border-zinc-700 text-zinc-400">
-                                                    <th class="text-left py-2">SUBCATEGORY</th>
-                                                    <th class="text-center py-2">US</th>
-                                                    <th class="text-center py-2">CHINA</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="divide-y divide-zinc-700">
-                    `
-                    ind.subIndicators.forEach(sub => {
-                        html += `
-                            <tr>
-                                <td class="py-2">${sub.name}</td>
-                                <td class="text-center py-2 text-blue-300">${sub.us}</td>
-                                <td class="text-center py-2 text-red-300">${sub.china}</td>
-                            </tr>
-                        `
-                    })
-                    html += `
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </details>
-                            </td>
-                        </tr>
-                    `
-                }
-            })
-            
-            html += '</tbody>'
-            return html
-        }
+/* ============================================================
+   INIT
+   ============================================================ */
+document.addEventListener('DOMContentLoaded',function(){renderPillarCards();renderRadar();});
+</script>
 
-        // Quick cards
-        function renderQuickCards() {
-            const container = document.getElementById('quick-cards')
-            let html = ''
-            cnpData.pillars.forEach(p => {
-                html += `
-                    <div onclick="navigateTo(${p.id})" class="pillar-card cursor-pointer bg-zinc-900 border border-zinc-800 rounded-2xl p-6 hover:border-zinc-600">
-                        <div class="flex justify-between items-start mb-4">
-                            <div class="text-3xl">${['💰','🔬','🛡️','🌍','🏛️','📚','🌐'][p.id-1]}</div>
-                            <div class="text-xs font-mono bg-zinc-800 px-3 py-1 rounded-2xl">${p.id}</div>
-                        </div>
-                        <div class="heading-font text-lg mb-1">${p.title}</div>
-                        <div class="flex justify-between text-sm">
-                            <div><span class="text-blue-400">US</span> <span class="text-3xl heading-font">${p.usScore}</span></div>
-                            <div class="text-right"><span class="text-red-400">CN</span> <span class="text-3xl heading-font">${p.chinaScore}</span></div>
-                        </div>
-                        <div class="h-2 bg-zinc-800 rounded-2xl mt-6 overflow-hidden">
-                            <div class="h-2 bg-gradient-to-r from-blue-400 to-red-400 rounded-2xl" style="width: ${Math.round((p.usScore / (p.usScore + p.chinaScore)) * 100)}%"></div>
-                        </div>
-                    </div>
-                `
-            })
-            container.innerHTML = html
-        }
-
-        // Radar chart
-        let radarChartInstance = null
-        function renderRadarChart() {
-            const ctx = document.getElementById('radarChart')
-            if (radarChartInstance) radarChartInstance.destroy()
-            
-            const labels = cnpData.pillars.map(p => p.title.split(' ')[0] + '…')
-            const usData = cnpData.pillars.map(p => p.usScore)
-            const chinaData = cnpData.pillars.map(p => p.chinaScore)
-            
-            radarChartInstance = new Chart(ctx, {
-                type: 'radar',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'United States',
-                            data: usData,
-                            borderColor: '#3b82f6',
-                            backgroundColor: 'rgba(59, 130, 246, 0.15)',
-                            borderWidth: 3,
-                            pointBackgroundColor: '#3b82f6',
-                            pointRadius: 5
-                        },
-                        {
-                            label: 'China',
-                            data: chinaData,
-                            borderColor: '#ef4444',
-                            backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                            borderWidth: 3,
-                            pointBackgroundColor: '#ef4444',
-                            pointRadius: 5
-                        }
-                    ]
-                },
-                options: {
-                    plugins: {
-                        legend: { position: 'top', labels: { color: '#a1a1aa', font: { size: 14 } } },
-                        tooltip: { mode: 'index' }
-                    },
-                    scales: {
-                        r: {
-                            grid: { color: '#27272a' },
-                            angleLines: { color: '#27272a' },
-                            pointLabels: { color: '#a1a1aa', font: { size: 13 } },
-                            ticks: { display: false, max: 35 }
-                        }
-                    }
-                }
-            })
-        }
-
-        // Navigation
-        function navigateTo(viewIndex) {
-            document.querySelectorAll('[id^="view-"]').forEach(v => v.classList.add('hidden'))
-            const target = document.getElementById(`view-${viewIndex}`)
-            if (target) target.classList.remove('hidden')
-            
-            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('bg-blue-500/10', 'text-blue-400'))
-            const activeNav = document.getElementById(`nav-${viewIndex}`)
-            if (activeNav) activeNav.classList.add('bg-blue-500/10', 'text-blue-400')
-            
-            if (viewIndex >= 1 && viewIndex <= 7) {
-                const tableEl = document.getElementById(`table-${viewIndex}`)
-                if (tableEl) tableEl.innerHTML = renderTable(viewIndex)
-                const pillar = cnpData.pillars.find(p => p.id === viewIndex)
-                if (pillar) {
-                    document.getElementById(`us-pillar-score-${viewIndex}`).textContent = pillar.usScore
-                    document.getElementById(`china-pillar-score-${viewIndex}`).textContent = pillar.chinaScore
-                }
-            }
-        }
-
-        // CSV export
-        function exportCSV() {
-            let csv = 'Pillar,Indicator,US Value,US Trend,China Value,China Trend,Source\n'
-            cnpData.pillars.forEach(p => {
-                p.indicators.forEach(i => {
-                    csv += `"${p.title}","${i.name.replace(/"/g, '""')}","${i.us}","${i.usTrend}","${i.china}","${i.chinaTrend}","${i.note}"\n`
-                    if (i.subIndicators) {
-                        i.subIndicators.forEach(sub => {
-                            csv += `"${p.title}"," → ${i.name} / ${sub.name}","${sub.us || ''}","","${sub.china || ''}","",""\n`
-                        })
-                    }
-                })
-            })
-            const blob = new Blob([csv], { type: 'text/csv' })
-            const url = URL.createObjectURL(blob)
-            const a = document.createElement('a')
-            a.href = url
-            a.download = `US-China-CNP-Dashboard-Deep-Granular-${new Date().toISOString().slice(0,10)}.csv`
-            a.click()
-            URL.revokeObjectURL(url)
-            
-            const toast = document.createElement('div')
-            toast.textContent = '✅ CSV exported with 400+ subcategories!'
-            toast.style.cssText = 'position:fixed; bottom:24px; right:24px; background:#10b981; color:white; padding:16px 24px; border-radius:9999px; box-shadow:0 10px 15px -3px rgb(16 185 129);'
-            document.body.appendChild(toast)
-            setTimeout(() => toast.remove(), 3000)
-        }
-
-        function toggleDarkMode() {
-            alert("🌙 Dashboard is optimized for dark mode. Light mode coming in v2!")
-        }
-
-        // Initialize
-        window.onload = function() {
-            initializeTailwind().config()
-            renderQuickCards()
-            renderRadarChart()
-            navigateTo(0)
-            console.log('%c✅ FULL DEEP-GRANULARITY CNP DASHBOARD READY — 400+ subcategories across every indicator', 'background:#3b82f6;color:white;padding:4px 8px;border-radius:4px')
-        }
-    </script>
 </body>
 </html>
